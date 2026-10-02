@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "createatomic:radicia_block"
+    }
+  ],
+  "result": {
+    "id": "createatomic:radicia_ingot",
+    "count": 9
+  }
+}

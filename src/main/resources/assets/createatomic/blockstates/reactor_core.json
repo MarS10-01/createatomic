@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "createatomic:block/reactor_core"
+    },
+    "axis=z": {
+      "model": "createatomic:block/reactor_core",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "createatomic:block/reactor_core",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

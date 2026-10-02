@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "createatomic:radicia_ore",
+    "createatomic:deepslate_radicia_ore",
+    "createatomic:radicia_block"
+  ]
+}

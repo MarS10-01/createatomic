@@ -1,0 +1,34 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+
+[[mods]]
+modId = "createatomic"
+version = "1.0.0"
+displayName = "Create: Atomic"
+authors = "You"
+description = '''
+Atomic energy for Create: Radicia ore, fuel rods and a water-cooled
+nuclear reactor that drives your kinetic networks. Handle with care.
+'''
+
+[[dependencies.createatomic]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1.0,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.createatomic]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.createatomic]]
+modId = "create"
+type = "required"
+versionRange = "[6.0.10,)"
+ordering = "AFTER"
+side = "BOTH"

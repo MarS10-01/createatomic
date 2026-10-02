@@ -1,0 +1,20 @@
+{
+  "itemGroup.createatomic": "Create: Atomic",
+  "block.createatomic.radicia_ore": "Руда радиции",
+  "block.createatomic.deepslate_radicia_ore": "Глубинная руда радиции",
+  "block.createatomic.radicia_block": "Блок радиции",
+  "block.createatomic.reactor_casing": "Корпус реактора",
+  "block.createatomic.reactor_core": "Активная зона реактора",
+  "item.createatomic.raw_radicia": "Необработанная радиция",
+  "item.createatomic.crushed_radicia": "Дроблёная радиция",
+  "item.createatomic.radicia_ingot": "Слиток радиции",
+  "item.createatomic.radicia_fuel_rod": "Топливный стержень радиции",
+  "item.createatomic.spent_fuel_rod": "Отработанный топливный стержень",
+  "effect.createatomic.radiation": "Радиация",
+  "message.createatomic.status": "Реактор %s | Стержни %d/%d | Отработано %d | Нагрев %d%% | Топливо %d с",
+  "message.createatomic.state_on": "РАБОТАЕТ",
+  "message.createatomic.state_off": "ОСТАНОВЛЕН",
+  "message.createatomic.busy": "Остановите реактор и дайте ему остыть перед перезагрузкой!",
+  "message.createatomic.full": "Реактор заполнен.",
+  "message.createatomic.no_fuel": "Топливные стержни не загружены."
+}

@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "createatomic:reactor_casing",
+    "createatomic:reactor_core"
+  ]
+}

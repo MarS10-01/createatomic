@@ -1,0 +1,20 @@
+{
+  "itemGroup.createatomic": "Create: Atomic",
+  "block.createatomic.radicia_ore": "Radicia Ore",
+  "block.createatomic.deepslate_radicia_ore": "Deepslate Radicia Ore",
+  "block.createatomic.radicia_block": "Block of Radicia",
+  "block.createatomic.reactor_casing": "Reactor Casing",
+  "block.createatomic.reactor_core": "Reactor Core",
+  "item.createatomic.raw_radicia": "Raw Radicia",
+  "item.createatomic.crushed_radicia": "Crushed Radicia",
+  "item.createatomic.radicia_ingot": "Radicia Ingot",
+  "item.createatomic.radicia_fuel_rod": "Radicia Fuel Rod",
+  "item.createatomic.spent_fuel_rod": "Spent Fuel Rod",
+  "effect.createatomic.radiation": "Radiation",
+  "message.createatomic.status": "Reactor %s | Rods %d/%d | Spent %d | Heat %d%% | Fuel %ds",
+  "message.createatomic.state_on": "ACTIVE",
+  "message.createatomic.state_off": "OFFLINE",
+  "message.createatomic.busy": "Stop the reactor and let it cool before reloading!",
+  "message.createatomic.full": "The reactor is full.",
+  "message.createatomic.no_fuel": "No fuel rods loaded."
+}

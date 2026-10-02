@@ -1,0 +1,19 @@
+{
+  "type": "create:crushing",
+  "ingredients": [
+    {
+      "item": "createatomic:raw_radicia"
+    }
+  ],
+  "processing_time": 250,
+  "results": [
+    {
+      "id": "createatomic:crushed_radicia",
+      "count": 1
+    },
+    {
+      "id": "createatomic:crushed_radicia",
+      "chance": 0.3
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CSC",
+    "RPR",
+    "CSC"
+  ],
+  "key": {
+    "C": {
+      "item": "createatomic:reactor_casing"
+    },
+    "S": {
+      "item": "create:shaft"
+    },
+    "R": {
+      "item": "createatomic:radicia_ingot"
+    },
+    "P": {
+      "item": "create:precision_mechanism"
+    }
+  },
+  "result": {
+    "id": "createatomic:reactor_core",
+    "count": 1
+  }
+}
