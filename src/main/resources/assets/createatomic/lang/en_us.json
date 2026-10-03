@@ -31,10 +31,10 @@
   "message.createatomic.type_rbmk": "RBMK",
   "message.createatomic.invalid": "Reactor structure invalid: %s",
   "message.createatomic.err_interior": "put the controller INTO the wall of a sealed chamber",
-  "message.createatomic.err_open": "the chamber is not sealed (or larger than 7x7x7)",
+  "message.createatomic.err_open": "chamber is not sealed (or larger than 11x11x11)",
   "message.createatomic.err_foreign": "wrong block at %d %d %d (walls: casing only; inside: fuel channels, control rods, graphite)",
-  "message.createatomic.err_small": "chamber must be at least 3x3x3 inside",
-  "message.createatomic.err_large": "chamber must be at most 7x7x7 inside",
+  "message.createatomic.err_small": "chamber must be at least 5x5x5 inside",
+  "message.createatomic.err_large": "chamber must be no larger than 11x11x11 inside",
   "message.createatomic.err_shape": "the chamber must be a plain rectangular box",
   "message.createatomic.err_fuel": "no fuel channels inside",
   "message.createatomic.err_control": "need %d control rods (1 per 4 fuel channels), found %d",
@@ -92,5 +92,9 @@
   "createatomic.ponder.radiation_shielding.text_4": "Hold a Geiger Counter to see the dose rate and your accumulated dose",
   "createatomic.ponder.radiation_shielding.text_5": "The Hazmat Suit stops alpha and most beta radiation, but gamma and neutrons are best stopped by walls",
   "createatomic.ponder.tag.atomic_energy": "Atomic Energy",
-  "createatomic.ponder.tag.atomic_energy.description": "Nuclear reactors, radiation and the equipment to survive them"
+  "createatomic.ponder.tag.atomic_energy.description": "Nuclear reactors, radiation and the equipment to survive them",
+  "block.createatomic.corium": "Corium",
+  "block.createatomic.irradiated_leaves": "Irradiated Leaves",
+  "item.createatomic.corium": "Corium",
+  "jei.createatomic.info.corium": "Corium is molten nuclear fuel left after reactor destruction."
 }

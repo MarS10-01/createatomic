@@ -31,10 +31,10 @@
   "message.createatomic.type_rbmk": "РБМК",
   "message.createatomic.invalid": "Конструкция реактора неверна: %s",
   "message.createatomic.err_interior": "поставьте пульт В СТЕНУ герметичной камеры",
-  "message.createatomic.err_open": "камера не герметична (или больше 7x7x7)",
+  "message.createatomic.err_open": "камера не герметична (или больше 11x11x11)",
   "message.createatomic.err_foreign": "лишний блок на %d %d %d (стены только из корпуса; внутри: топливные каналы, стержни, графит)",
-  "message.createatomic.err_small": "камера должна быть не меньше 3x3x3 внутри",
-  "message.createatomic.err_large": "камера должна быть не больше 7x7x7 внутри",
+  "message.createatomic.err_small": "камера должна быть не меньше 5x5x5 внутри",
+  "message.createatomic.err_large": "камера должна быть не больше 11x11x11 внутри",
   "message.createatomic.err_shape": "камера должна быть простым прямоугольным объёмом",
   "message.createatomic.err_fuel": "внутри нет топливных каналов",
   "message.createatomic.err_control": "нужно %d стержней управления (1 на 4 канала), найдено %d",
@@ -52,7 +52,7 @@
   "createatomic.goggles.control": "Стержни выведены",
   "createatomic.goggles.fuel": "Топливные стержни",
   "createatomic.goggles.spent": "Отработанные стержни",
-  "createatomic.goggles.coolant": "Теплоноситель",
+  "createatomic.goggles.coolant": "Охлаждение",
   "createatomic.goggles.scram": "Аварийная остановка (АЗ)!",
   "createatomic.goggles.low_coolant": "Мало теплоносителя! Добавьте воду немедленно",
   "jei.createatomic.info.ore": "Урановая руда генерируется под землёй. Добывается железной киркой или лучше; дробите её в дробилках Create, чтобы получить больше. Радиоактивна: не носите с собой большие стопки.",
@@ -92,5 +92,9 @@
   "createatomic.ponder.radiation_shielding.text_4": "Держите счётчик Гейгера в руке, чтобы видеть мощность дозы и накопленную дозу",
   "createatomic.ponder.radiation_shielding.text_5": "Защитный костюм останавливает альфа- и почти всё бета-излучение, а гамма и нейтроны лучше всего задерживают стены",
   "createatomic.ponder.tag.atomic_energy": "Атомная энергия",
-  "createatomic.ponder.tag.atomic_energy.description": "Ядерные реакторы, радиация и снаряжение, чтобы пережить их соседство"
+  "createatomic.ponder.tag.atomic_energy.description": "Ядерные реакторы, радиация и снаряжение, чтобы пережить их соседство",
+  "block.createatomic.corium": "Кориум",
+  "block.createatomic.irradiated_leaves": "Облучённая листва",
+  "item.createatomic.corium": "Кориум",
+  "jei.createatomic.info.corium": "Кориум — расплавленное ядерное топливо, оставшееся после разрушения реактора."
 }
