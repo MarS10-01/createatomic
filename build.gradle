@@ -42,6 +42,8 @@ repositories {
     maven { url = 'https://maven.blamejared.com/' }            // JEI
 }
 
+def jeiVersion = project.findProperty('jei_version') ?: '19.21.0.247'
+
 dependencies {
     implementation("com.simibubi.create:create-${minecraft_version}:${create_version}") { transitive = false }
     implementation("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}")
@@ -50,9 +52,9 @@ dependencies {
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")
 
     // JEI: API for compiling the plugin, full JEI in the dev client so you can test it
-    compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
-    compileOnly("mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}")
-    runtimeOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
+    compileOnly("mezz.jei:jei-${minecraft_version}-common-api:${jeiVersion}")
+    compileOnly("mezz.jei:jei-${minecraft_version}-neoforge-api:${jeiVersion}")
+    runtimeOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jeiVersion}")
 }
 
 tasks.withType(JavaCompile).configureEach {
