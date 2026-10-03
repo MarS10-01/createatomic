@@ -32,3 +32,10 @@ type = "required"
 versionRange = "[6.0.10,)"
 ordering = "AFTER"
 side = "BOTH"
+
+[[dependencies.createatomic]]
+modId = "jei"
+type = "optional"
+versionRange = "[19.0.0,)"
+ordering = "NONE"
+side = "CLIENT"
