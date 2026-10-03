@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["ISI", "PBP", "ISI"],
+  "key": {
+    "I": {"item": "create:iron_sheet"},
+    "S": {"item": "create:sturdy_sheet"},
+    "P": {"item": "create:precision_mechanism"},
+    "B": {"item": "createatomic:borated_concrete"}
+  },
+  "result": {"id": "createatomic:reactor_hatch", "count": 1}
+}

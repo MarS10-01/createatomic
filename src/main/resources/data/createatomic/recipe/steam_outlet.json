@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["ISI", "SCS", "IPI"],
+  "key": {
+    "I": {"item": "create:iron_sheet"},
+    "S": {"item": "create:sturdy_sheet"},
+    "C": {"item": "create:fluid_pipe"},
+    "P": {"item": "create:precision_mechanism"}
+  },
+  "result": {"id": "createatomic:steam_outlet", "count": 1}
+}

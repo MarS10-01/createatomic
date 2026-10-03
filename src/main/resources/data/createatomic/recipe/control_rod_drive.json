@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["IPI", "SRS", "ICI"],
+  "key": {
+    "I": {"item": "create:iron_sheet"},
+    "P": {"item": "create:precision_mechanism"},
+    "S": {"item": "create:sturdy_sheet"},
+    "R": {"item": "create:shaft"},
+    "C": {"item": "create:brass_casing"}
+  },
+  "result": {"id": "createatomic:control_rod_drive", "count": 1}
+}

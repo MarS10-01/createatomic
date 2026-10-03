@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": ["IFI", "SBS", "IFI"],
+  "key": {
+    "I": {"item": "create:iron_sheet"},
+    "F": {"item": "create:fluid_pipe"},
+    "S": {"item": "create:sturdy_sheet"},
+    "B": {"item": "createatomic:borated_concrete"}
+  },
+  "result": {"id": "createatomic:coolant_manifold", "count": 1}
+}
