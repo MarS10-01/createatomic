@@ -23,7 +23,6 @@ public class AtomicScenes {
 
     public static void structure(SceneBuilder scene, SceneBuildingUtil util) {
         scene.title("reactor_structure", "Building a Nuclear Reactor");
-        scene.configureBasicScene();
         scene.scaleSceneView(0.75f);
         scene.showBasePlate();
         scene.idle(10);
@@ -103,7 +102,6 @@ public class AtomicScenes {
 
     public static void operation(SceneBuilder scene, SceneBuildingUtil util) {
         scene.title("reactor_operation", "Operating the Reactor");
-        scene.configureBasicScene();
         scene.scaleSceneView(0.75f);
         scene.showBasePlate();
         scene.world().showSection(util.select().fromTo(1, 1, 0, 5, 5, 5), Direction.DOWN);
@@ -175,7 +173,6 @@ public class AtomicScenes {
 
     public static void shielding(SceneBuilder scene, SceneBuildingUtil util) {
         scene.title("radiation_shielding", "Radiation and Shielding");
-        scene.configureBasicScene();
         scene.scaleSceneView(0.8f);
         scene.showBasePlate();
         scene.idle(10);
