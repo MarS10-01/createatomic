@@ -21,97 +21,114 @@ public class AtomicScenes {
 
     public static void structure(SceneBuilder scene, SceneBuildingUtil util) {
         scene.title("reactor_structure", "Building the Sealed Reactor Vessel");
-        scene.scaleSceneView(0.56f);
+        scene.scaleSceneView(0.52f);
         scene.showBasePlate();
         scene.idle(10);
 
-        // Compact, fully roofed 11 x 9 x 11 demonstration. The open hatch is the only roof opening.
-        scene.world().showSection(util.select().fromTo(1, 1, 1, 13, 1, 13), net.minecraft.core.Direction.DOWN);
-        scene.idle(8);
-        scene.world().showSection(util.select().fromTo(1, 2, 1, 1, 10, 13), net.minecraft.core.Direction.DOWN);
-        scene.world().showSection(util.select().fromTo(13, 2, 1, 13, 10, 13), net.minecraft.core.Direction.DOWN);
-        scene.world().showSection(util.select().fromTo(2, 2, 1, 12, 10, 1), net.minecraft.core.Direction.DOWN);
-        scene.world().showSection(util.select().fromTo(2, 2, 13, 12, 10, 13), net.minecraft.core.Direction.DOWN);
-        scene.idle(12);
-        scene.world().showSection(util.select().fromTo(1, 11, 1, 13, 11, 13), net.minecraft.core.Direction.DOWN);
-        scene.idle(15);
-        scene.overlay().showText(90).text("createatomic.ponder.reactor_structure.text_1");
-        scene.idle(95);
+        // First show the complete, sealed industrial vessel so the player understands the final silhouette.
+        scene.world().showSection(util.select().fromTo(1, 1, 1, 13, 11, 13), net.minecraft.core.Direction.DOWN);
+        scene.world().showSection(util.select().position(0, 6, 7), net.minecraft.core.Direction.WEST);
+        scene.idle(18);
+        scene.overlay().showText(90)
+                .text("createatomic.ponder.reactor_structure.text_1")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(7, 11, 7));
+        scene.idle(100);
 
-        // Open roof hatch in the middle.
+        // Open the service hatch: this is the only intended roof opening during maintenance.
         scene.world().hideSection(util.select().position(7, 11, 7), net.minecraft.core.Direction.UP);
         scene.idle(8);
-        scene.overlay().showText(90).text("createatomic.ponder.reactor_structure.text_2")
-                .attachKeyFrame().placeNearTarget().pointAt(util.vector().topOf(7, 11, 7));
+        scene.overlay().showText(85)
+                .text("createatomic.ponder.reactor_structure.text_2")
+                .attachKeyFrame().placeNearTarget()
+                .pointAt(util.vector().topOf(7, 11, 7));
         scene.idle(95);
 
-        // External coolant manifolds.
-        scene.world().showSection(util.select().position(0, 5, 5), net.minecraft.core.Direction.EAST);
-        scene.world().showSection(util.select().position(0, 7, 5), net.minecraft.core.Direction.EAST);
-        scene.idle(10);
-        scene.overlay().showText(90).text("createatomic.ponder.reactor_structure.text_3")
-                .placeNearTarget().pointAt(util.vector().centerOf(0, 6, 5));
+        // Cutaway view for Ponder: remove two service panels and the roof temporarily.
+        // The real reactor remains fully enclosed; this is only a teaching cutaway.
+        scene.world().hideSection(util.select().fromTo(1, 2, 1, 13, 10, 1), net.minecraft.core.Direction.NORTH);
+        scene.world().hideSection(util.select().fromTo(1, 2, 1, 1, 10, 13), net.minecraft.core.Direction.WEST);
+        scene.world().hideSection(util.select().fromTo(1, 11, 1, 13, 11, 13), net.minecraft.core.Direction.UP);
+        scene.idle(12);
+
+        // Reveal the complete internal volume: water, fuel channels, control rods and graphite.
+        scene.world().showSection(util.select().fromTo(2, 2, 2, 12, 10, 12), net.minecraft.core.Direction.DOWN);
+        scene.idle(18);
+        scene.overlay().showText(100)
+                .text("createatomic.ponder.reactor_structure.text_5")
+                .attachKeyFrame().placeNearTarget()
+                .pointAt(util.vector().centerOf(7, 6, 7));
+        scene.idle(110);
+
+        scene.overlay().showText(90)
+                .text("createatomic.ponder.reactor_structure.text_3")
+                .colored(PonderPalette.BLUE).placeNearTarget()
+                .pointAt(util.vector().centerOf(5, 11, 7));
         scene.idle(95);
 
-        // Roof fittings.
-        scene.world().showSection(util.select().position(7, 11, 5), net.minecraft.core.Direction.DOWN);
-        scene.world().showSection(util.select().position(9, 11, 7), net.minecraft.core.Direction.DOWN);
-        scene.idle(10);
-        scene.overlay().showText(90).text("createatomic.ponder.reactor_structure.text_4")
-                .placeNearTarget().pointAt(util.vector().topOf(8, 11, 6));
+        scene.overlay().showText(90)
+                .text("createatomic.ponder.reactor_structure.text_4")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(7, 11, 9));
         scene.idle(95);
 
-        // Dense internal active zone.
-        int[][] fuel = {{3,3,3},{5,3,3},{7,3,3},{9,3,3},{11,3,3},{3,3,5},{5,3,5},{7,3,5},{9,3,5},{11,3,5},
-                        {3,3,7},{5,3,7},{7,3,7},{9,3,7},{11,3,7},{3,3,9},{5,3,9},{7,3,9},{9,3,9},{11,3,9},
-                        {3,3,11},{5,3,11},{7,3,11},{9,3,11},{11,3,11}};
-        for (int[] p : fuel) {
-            scene.world().showSection(util.select().position(p[0], p[1], p[2]), net.minecraft.core.Direction.DOWN);
-            scene.idle(1);
-        }
-        scene.overlay().showText(100).text("createatomic.ponder.reactor_structure.text_5")
-                .attachKeyFrame().placeNearTarget().pointAt(util.vector().centerOf(7, 3, 7));
-        scene.idle(105);
+        scene.overlay().showText(100)
+                .text("createatomic.ponder.reactor_structure.text_6")
+                .colored(PonderPalette.BLUE)
+                .placeNearTarget()
+                .pointAt(util.vector().centerOf(7, 6, 7));
+        scene.idle(110);
 
-        scene.overlay().showText(95).text("createatomic.ponder.reactor_structure.text_6")
-                .colored(PonderPalette.BLUE).placeNearTarget().pointAt(util.vector().topOf(7, 11, 7));
-        scene.idle(100);
-        scene.overlay().showText(100).text("createatomic.ponder.reactor_structure.text_7");
+        scene.overlay().showText(100)
+                .text("createatomic.ponder.reactor_structure.text_7");
         scene.idle(105);
         scene.markAsFinished();
     }
 
     public static void operation(SceneBuilder scene, SceneBuildingUtil util) {
         scene.title("reactor_operation", "Loading and Operating the Reactor");
-        scene.scaleSceneView(0.62f);
+        scene.scaleSceneView(0.56f);
         scene.showBasePlate();
-        scene.world().showSection(util.select().fromTo(1, 1, 1, 13, 10, 13), net.minecraft.core.Direction.DOWN);
-        scene.world().showSection(util.select().position(0, 6, 7), net.minecraft.core.Direction.EAST);
-        scene.idle(20);
+        scene.idle(8);
 
-        scene.overlay().showControls(util.vector().centerOf(4, 4, 4), Pointing.DOWN, 60)
-                .rightClick()
-                .withItem(new ItemStack(ModItems.FUEL_ROD.get()));
-        scene.overlay().showText(85)
-                .text("createatomic.ponder.reactor_operation.text_1");
-        scene.idle(95);
+        // Cutaway maintenance view: the actual structure is sealed, but Ponder removes the service panels.
+        scene.world().showSection(util.select().fromTo(1, 1, 1, 13, 11, 13), net.minecraft.core.Direction.DOWN);
+        scene.world().showSection(util.select().position(0, 6, 7), net.minecraft.core.Direction.WEST);
+        scene.idle(12);
+        scene.world().hideSection(util.select().fromTo(1, 2, 1, 13, 10, 1), net.minecraft.core.Direction.NORTH);
+        scene.world().hideSection(util.select().fromTo(1, 2, 1, 1, 10, 13), net.minecraft.core.Direction.WEST);
+        scene.world().hideSection(util.select().fromTo(1, 11, 1, 13, 11, 13), net.minecraft.core.Direction.UP);
+        scene.world().showSection(util.select().fromTo(2, 2, 2, 12, 10, 12), net.minecraft.core.Direction.DOWN);
+        scene.idle(15);
+
+        scene.overlay().showText(90)
+                .text("createatomic.ponder.reactor_operation.text_1")
+                .attachKeyFrame().placeNearTarget()
+                .pointAt(util.vector().centerOf(7, 3, 7));
+        scene.overlay().showControls(util.vector().centerOf(7, 3, 7), Pointing.DOWN, 60)
+                .rightClick().withItem(new ItemStack(ModItems.FUEL_ROD.get()));
+        scene.idle(100);
 
         scene.overlay().showControls(util.vector().centerOf(4, 2, 2), Pointing.DOWN, 60)
-                .rightClick()
-                .withItem(new ItemStack(Items.WATER_BUCKET));
+                .rightClick().withItem(new ItemStack(Items.WATER_BUCKET));
         scene.overlay().showText(90)
                 .text("createatomic.ponder.reactor_operation.text_2");
         scene.idle(100);
 
         scene.overlay().showText(95)
-                .text("createatomic.ponder.reactor_operation.text_3");
-        scene.idle(105);
-
-        scene.overlay().showText(95)
-                .text("createatomic.ponder.reactor_operation.text_4");
+                .text("createatomic.ponder.reactor_operation.text_3")
+                .colored(PonderPalette.BLUE)
+                .placeNearTarget()
+                .pointAt(util.vector().centerOf(5, 11, 7));
         scene.idle(100);
 
-        scene.overlay().showControls(util.vector().centerOf(1, 6, 7), Pointing.RIGHT, 60)
+        scene.overlay().showText(95)
+                .text("createatomic.ponder.reactor_operation.text_4")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(7, 11, 9));
+        scene.idle(100);
+
+        scene.overlay().showControls(util.vector().centerOf(0, 6, 7), Pointing.RIGHT, 60)
                 .withItem(AllItems.GOGGLES.asStack());
         scene.overlay().showText(90)
                 .text("createatomic.ponder.reactor_operation.text_5");
@@ -122,10 +139,10 @@ public class AtomicScenes {
                 .attachKeyFrame()
                 .colored(PonderPalette.RED)
                 .placeNearTarget()
-                .pointAt(util.vector().topOf(7, 10, 7));
+                .pointAt(util.vector().centerOf(7, 6, 7));
         scene.idle(110);
 
-        scene.overlay().showControls(util.vector().centerOf(4, 4, 4), Pointing.DOWN, 60)
+        scene.overlay().showControls(util.vector().centerOf(7, 3, 7), Pointing.DOWN, 60)
                 .rightClick();
         scene.overlay().showText(95)
                 .text("createatomic.ponder.reactor_operation.text_7");
