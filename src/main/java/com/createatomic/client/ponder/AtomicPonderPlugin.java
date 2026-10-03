@@ -8,10 +8,7 @@ import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.createmod.ponder.api.registration.PonderTagRegistrationHelper;
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * Create's built-in guide (Ponder). Hold W while pointing at one of the items below (inventory, JEI, creative tab)
- * to open the scenes, exactly like for Create's own blocks.
- */
+/** Create Ponder integration for Create: Atomic. */
 public class AtomicPonderPlugin implements PonderPlugin {
 
     @Override
@@ -21,7 +18,6 @@ public class AtomicPonderPlugin implements PonderPlugin {
 
     @Override
     public void registerScenes(PonderSceneRegistrationHelper<ResourceLocation> helper) {
-        // Scene 1: how to build the multiblock
         helper.forComponents(
                         CreateAtomic.id("reactor_core"),
                         CreateAtomic.id("reactor_casing"),
@@ -30,14 +26,14 @@ public class AtomicPonderPlugin implements PonderPlugin {
                         CreateAtomic.id("graphite_block"))
                 .addStoryBoard("reactor/structure", AtomicScenes::structure, AtomicPonderTags.ATOMIC);
 
-        // Scene 2: how to run it
         helper.forComponents(
                         CreateAtomic.id("reactor_core"),
+                        CreateAtomic.id("reactor_casing"),
+                        CreateAtomic.id("fuel_channel"),
                         CreateAtomic.id("radicia_fuel_rod"),
                         CreateAtomic.id("spent_fuel_rod"))
-                .addStoryBoard("reactor/structure", AtomicScenes::operation, AtomicPonderTags.ATOMIC);
+                .addStoryBoard("reactor/operation", AtomicScenes::operation, AtomicPonderTags.ATOMIC);
 
-        // Scene 3: radiation and shielding
         helper.forComponents(
                         CreateAtomic.id("geiger_counter"),
                         CreateAtomic.id("hazmat_helmet"),
@@ -49,7 +45,10 @@ public class AtomicPonderPlugin implements PonderPlugin {
                         CreateAtomic.id("borated_concrete"),
                         CreateAtomic.id("radicia_block"),
                         CreateAtomic.id("radicia_ore"),
-                        CreateAtomic.id("deepslate_radicia_ore"))
+                        CreateAtomic.id("deepslate_radicia_ore"),
+                        CreateAtomic.id("corium"),
+                        CreateAtomic.id("irradiated_soil"),
+                        CreateAtomic.id("irradiated_leaves"))
                 .addStoryBoard("radiation/shielding", AtomicScenes::shielding, AtomicPonderTags.ATOMIC);
     }
 
@@ -59,7 +58,7 @@ public class AtomicPonderPlugin implements PonderPlugin {
                 .addToIndex()
                 .item(ModItems.REACTOR_CORE_ITEM.get(), true, false)
                 .title("Atomic Energy")
-                .description("Nuclear reactors, radiation and the equipment to survive them")
+                .description("Build, operate and survive an accessible Create nuclear reactor")
                 .register();
 
         helper.addToTag(AtomicPonderTags.ATOMIC)
@@ -71,6 +70,7 @@ public class AtomicPonderPlugin implements PonderPlugin {
                 .add(CreateAtomic.id("radicia_fuel_rod"))
                 .add(CreateAtomic.id("geiger_counter"))
                 .add(CreateAtomic.id("reinforced_concrete"))
-                .add(CreateAtomic.id("borated_concrete"));
+                .add(CreateAtomic.id("borated_concrete"))
+                .add(CreateAtomic.id("corium"));
     }
 }

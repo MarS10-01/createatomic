@@ -1,7 +1,9 @@
 package com.createatomic.block.entity;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import com.createatomic.radiation.Radiation;
 import com.createatomic.registry.ModBlockEntities;
@@ -47,13 +49,13 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
  *  meltdown     : core temperature reaches MELT_TEMP
  */
 public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
-    public static final int TANK_CAPACITY = 16000;
-    public static final float FUEL_UNITS = 1200f;
-    public static final float HEAT_PER_MB = 0.5f;
-    public static final float SCRAM_TEMP = 800f;
-    public static final float MELT_TEMP = 1200f;
-    public static final float SPEED = 64f;
-    public static final float SU_PER_STEAM = 13.5f;
+    public static final int TANK_CAPACITY = 64000;
+    public static final float FUEL_UNITS = 1500f;
+    public static final float HEAT_PER_MB = 0.45f;
+    public static final float SCRAM_TEMP = 850f;
+    public static final float MELT_TEMP = 1350f;
+    public static final float SPEED = 96f;
+    public static final float SU_PER_STEAM = 11.0f;
 
     private int rods;
     private int spent;
@@ -70,6 +72,8 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
     private float outputCapacity;
     private boolean generating;
 
+    private final Set<Long> loadedChannels = new HashSet<>();
+
     private ReactorStructure structure = new ReactorStructure();
     private boolean scanned;
 
@@ -77,6 +81,9 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
     private boolean viewValid;
     private boolean viewRbmk;
     private int viewFuel;
+    private int viewWidth;
+    private int viewHeight;
+    private int viewDepth;
     private String viewError = "err_interior";
     private int[] viewErrorArgs = new int[0];
 
@@ -171,7 +178,47 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
 
     private void refreshStructure() {
         structure = ReactorStructure.scan(level, worldPosition);
+        if (structure.valid) {
+            loadedChannels.removeIf(packed -> {
+                BlockPos channel = BlockPos.of(packed);
+                return !structure.containsInterior(channel)
+                        || !level.getBlockState(channel).is(ModBlocks.FUEL_CHANNEL.get());
+            });
+            rods = loadedChannels.size();
+            // Keep the physical channel state synchronized with the reactor inventory.
+            for (long packed : new HashSet<>(loadedChannels)) {
+                BlockPos channel = BlockPos.of(packed);
+                BlockState state = level.getBlockState(channel);
+                if (!state.getValue(com.createatomic.block.FuelChannelBlock.LOADED)) {
+                    level.setBlock(channel, state.setValue(com.createatomic.block.FuelChannelBlock.LOADED, true), 3);
+                }
+            }
+            for (int y = structure.min.getY(); y <= structure.max.getY(); y++) {
+                for (int x = structure.min.getX(); x <= structure.max.getX(); x++) {
+                    for (int z = structure.min.getZ(); z <= structure.max.getZ(); z++) {
+                        BlockPos channel = new BlockPos(x, y, z);
+                        BlockState state = level.getBlockState(channel);
+                        if (state.is(ModBlocks.FUEL_CHANNEL.get())
+                                && state.getValue(com.createatomic.block.FuelChannelBlock.LOADED)
+                                && !loadedChannels.contains(channel.asLong())) {
+                            level.setBlock(channel, state.setValue(com.createatomic.block.FuelChannelBlock.LOADED, false), 3);
+                        }
+                    }
+                }
+            }
+        }
         scanned = true;
+        viewValid = structure.valid;
+        viewRbmk = structure.rbmk;
+        viewFuel = structure.fuel;
+        viewWidth = structure.width;
+        viewHeight = structure.height;
+        viewDepth = structure.depth;
+        viewError = structure.error;
+        viewErrorArgs = new int[structure.errorArgs.length];
+        for (int i = 0; i < structure.errorArgs.length; i++) {
+            viewErrorArgs[i] = structure.errorArgs[i] instanceof Integer value ? value : 0;
+        }
     }
 
     private void reactorStep() {
@@ -181,46 +228,40 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
         boolean valid = structure.valid;
         boolean rbmk = valid && structure.rbmk;
 
-        // --- control rods
         int signal = level.getBestNeighborSignal(worldPosition);
-        float target = (valid && rods > 0) ? signal / 15f : 0f;
+        float target = (valid && rods > 0 && structure.control > 0) ? signal / 15f : 0f;
         if (temp >= SCRAM_TEMP) {
-            target = 0f; // automatic SCRAM
+            target = 0f;
         }
-        if (target == 0f && prevTarget > 0f && rbmk && rodPos > 0.6f) {
-            spike = 0.9f; // graphite-tipped rods: SCRAM from high withdrawal gives a power spike
+        if (target == 0f && prevTarget > 0f && rbmk && rodPos > 0.65f) {
+            spike = 1.15f;
         }
         prevTarget = target;
-
         if (target > rodPos) {
-            rodPos = Math.min(target, rodPos + 0.03f);
+            rodPos = Math.min(target, rodPos + 0.025f);
         } else if (target < rodPos) {
-            rodPos = Math.max(target, rodPos - (target == 0f ? 0.12f : 0.06f));
+            rodPos = Math.max(target, rodPos - (target == 0f ? 0.14f : 0.06f));
         }
 
-        // --- reactivity
-        float bonus = 1f;
+        float controlCoverage = valid ? Mth.clamp(structure.control / (float) Math.max(1, rods), 0.25f, 1f) : 0.25f;
+        float bonus = valid ? 1f + (rbmk ? 0.35f : 0.08f) : 0f;
+        float coolantFraction = coolant / (float) TANK_CAPACITY;
         float feedback;
         if (rbmk) {
-            bonus = 1f + 0.25f * Math.min(3f, structure.graphite / (float) Math.max(1, structure.fuel));
-            float coolantFraction = coolant / (float) TANK_CAPACITY;
-            feedback = coolantFraction < 0.5f
-                    ? 1f + 0.003f * Math.max(0f, temp - 280f)
-                    : Mth.clamp(1f - 0.0004f * (temp - 280f), 0.5f, 1.2f);
+            feedback = coolantFraction < 0.35f
+                    ? 1f + 0.005f * Math.max(0f, temp - 260f)
+                    : Mth.clamp(1f - 0.00055f * (temp - 260f), 0.40f, 1.2f);
         } else {
-            feedback = Mth.clamp(1f - 0.0012f * (temp - 280f), 0.3f, 1.2f);
+            feedback = Mth.clamp(1f - 0.0014f * (temp - 300f), 0.25f, 1.15f);
         }
-        float targetPower = rods > 0 ? Mth.clamp(rodPos * bonus * feedback + spike, 0f, 3f) : 0f;
-        power += (targetPower - power) * 0.35f;
-        if (targetPower == 0f && power < 0.002f) {
-            power = 0f;
-        }
-        spike *= 0.8f;
+
+        float targetPower = rods > 0 ? Mth.clamp(rodPos * bonus * feedback * controlCoverage + spike, 0f, 3.5f) : 0f;
+        power += (targetPower - power) * 0.33f;
+        spike *= 0.78f;
         if (spike < 0.01f) {
             spike = 0f;
         }
 
-        // --- fuel burn-up
         if (power > 0.01f && rods > 0) {
             if (burnLeft <= 0f) {
                 burnLeft = FUEL_UNITS;
@@ -229,64 +270,66 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
             burnLeft -= power;
             if (burnLeft <= 0f) {
                 spent += rods;
-                hotRods = Math.max(hotRods, rods);
                 rods = 0;
+                loadedChannels.clear();
+                hotRods = Math.max(hotRods, spent);
                 burnLeft = 0f;
                 notifyUpdate();
             }
         }
 
-        // --- decay heat keeps producing heat after shutdown
-        decay = Math.max(decay * 0.9975f, power * 0.12f);
+        decay = Math.max(decay * 0.9975f, power * 0.14f);
         if (decay < 0.002f && power < 0.01f) {
             decay = 0f;
-            hotRods = rods;
+            hotRods = Math.max(hotRods, spent);
         }
 
-        // --- heat balance and cooling
-        float multiplier = rbmk ? 1.2f : 1f;
-        float thermal = (power * rods + decay * hotRods) * 10f * multiplier;
-        float wanted = thermal * 0.95f + Math.max(0f, temp - 280f) * 0.6f;
+        float thermal = (power * Math.max(1, rods) + decay * Math.max(1, hotRods)) * 11f * (rbmk ? 1.25f : 1f);
+        float wanted = thermal * 0.94f + Math.max(0f, temp - 280f) * 0.65f;
         float removed = Math.min(wanted, coolant * HEAT_PER_MB);
-        coolant = Math.max(0, coolant - Mth.ceil(removed / HEAT_PER_MB));
+        int consumed = Mth.ceil(removed / HEAT_PER_MB);
+        coolant = Math.max(0, coolant - consumed);
         steam = removed / HEAT_PER_MB;
-        temp += (thermal - removed) * 0.3f - (temp - 20f) * 0.003f;
+        temp += (thermal - removed) * 0.28f - (temp - 20f) * 0.0025f;
         if (temp < 20f) {
             temp = 20f;
         }
 
-        // --- kinetic output from steam
-        float capacity = steam * SU_PER_STEAM * (rbmk ? 1.25f : 1f);
+        float capacity = steam * SU_PER_STEAM * (rbmk ? 1.35f : 1f);
         boolean nowGenerating = steam > 1f;
-        if (nowGenerating != generating || Math.abs(capacity - outputCapacity) > Math.max(16f, outputCapacity * 0.03f)) {
+        if (nowGenerating != generating || Math.abs(capacity - outputCapacity) > Math.max(24f, outputCapacity * 0.03f)) {
             generating = nowGenerating;
             outputCapacity = capacity;
             updateGeneratedRotation();
         }
 
+        if (!valid) {
+            power *= 0.92f;
+            rodPos = Math.max(0f, rodPos - 0.08f);
+        }
+
         emitRadiation();
         spawnEffects(serverLevel);
-
         if (temp >= MELT_TEMP) {
             meltdown(serverLevel);
             return;
         }
         if (level.getGameTime() % 20 == 0) {
-            sendData(); // keeps the goggle tooltip up to date
+            sendData();
         }
         setChanged();
     }
 
     private void emitRadiation() {
         Vec3 source = structure.valid ? structure.center : Vec3.atCenterOf(worldPosition);
-        double multiplier = (structure.valid && structure.rbmk) ? 1.3 : 1.0;
-        double hot = power * rods + decay * hotRods;
-        double gamma = (0.004 * rods + 0.003 * spent + 0.06 * hot) * multiplier;
-        double neutron = 0.02 * power * Math.max(1, rods) * multiplier;
+        double hot = power * Math.max(1, rods) + decay * Math.max(1, hotRods);
+        double multiplier = structure.valid && structure.rbmk ? 1.45 : 1.0;
+        double gamma = (0.012 * rods + 0.009 * spent + 0.10 * hot) * multiplier;
+        double neutron = 0.035 * power * Math.max(1, rods) * multiplier;
         if (gamma < 1.0e-6 && neutron < 1.0e-6) {
             return;
         }
-        Radiation.emit(level, worldPosition, source, new double[] {0.0, 0.0, gamma, neutron}, 40, false);
+        Radiation.emit(level, worldPosition, source, new double[] {0.0, 0.0, gamma, neutron}, 60, false);
     }
 
     private void spawnEffects(ServerLevel serverLevel) {
@@ -294,185 +337,315 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
             return;
         }
         RandomSource random = serverLevel.random;
-        double minX = structure.min.getX();
-        double minZ = structure.min.getZ();
-        double sizeX = structure.max.getX() - minX + 1;
-        double sizeZ = structure.max.getZ() - minZ + 1;
-        double topY = structure.max.getY() + 2.2;
-
-        // white steam plume
-        int plume = steam > 5f ? 1 + (int) Math.min(6f, steam / 20f) : 0;
-        for (int i = 0; i < plume; i++) {
+        double centerX = structure.center.x;
+        double centerZ = structure.center.z;
+        double topY = structure.max.getY() + 1.5;
+        int steamCount = steam > 5f ? 1 + (int) Math.min(8f, steam / 24f) : 0;
+        for (int i = 0; i < steamCount; i++) {
             serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                    minX + random.nextDouble() * sizeX, topY, minZ + random.nextDouble() * sizeZ,
-                    0, 0.0, 0.12, 0.0, 1.0);
+                    centerX + (random.nextDouble() - 0.5) * structure.width * 0.7, topY,
+                    centerZ + (random.nextDouble() - 0.5) * structure.depth * 0.7,
+                    0, 0, 0.10, 0, 1.0);
         }
-        // dark smoke when overheating
-        if (temp > 450f) {
-            int smoke = temp > 700f ? 5 : 2;
+        if (temp > 420f) {
+            int smoke = temp > 700f ? 6 : 2;
             for (int i = 0; i < smoke; i++) {
-                serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
-                        minX + random.nextDouble() * sizeX, topY, minZ + random.nextDouble() * sizeZ,
-                        0, 0.0, 0.1, 0.0, 1.0);
+                serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, centerX + (random.nextDouble() - 0.5) * 4.0,
+                        topY + random.nextDouble() * 2.0, centerZ + (random.nextDouble() - 0.5) * 4.0,
+                        0, (random.nextDouble() - 0.5) * 0.03, 0.12, (random.nextDouble() - 0.5) * 0.03, 1.0);
             }
         }
-        if (temp > 800f) {
-            serverLevel.sendParticles(ParticleTypes.FLAME,
-                    minX + random.nextDouble() * sizeX, topY, minZ + random.nextDouble() * sizeZ,
-                    0, 0.0, 0.1, 0.0, 1.0);
-        }
-
-        long time = serverLevel.getGameTime();
-        if (steam > 20f && time % 20 == 0) {
-            serverLevel.playSound(null, worldPosition, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS, 0.4f, 0.6f);
-        }
-        if (temp > 600f && time % 40 == 0) {
-            serverLevel.playSound(null, worldPosition, SoundEvents.BELL_BLOCK, SoundSource.BLOCKS, 2.0f, 0.5f);
+        if (temp > 850f) {
+            serverLevel.sendParticles(ParticleTypes.FLAME, centerX, topY, centerZ, 2, 0.8, 0.2, 0.8, 0.02);
         }
     }
 
     private void meltdown(ServerLevel serverLevel) {
         BlockPos pos = worldPosition;
-        boolean rbmk = structure.valid && structure.rbmk;
-        int size = Math.max(1, Math.max(rods, hotRods) + spent / 2);
         Vec3 center = structure.valid ? structure.center : Vec3.atCenterOf(pos);
+        int fuelBefore = Math.max(1, rods + spent);
+        boolean rbmk = structure.valid && structure.rbmk;
 
-        double k = Math.min(16.0, 1.0 + size * 0.35);
-        // Long-lived exclusion zone: gamma reaches 160 blocks, neutron 150 blocks.
-        Radiation.emit(serverLevel, pos, center, new double[] {0.02 * k, 0.15 * k, 45.0 * k, 2.5 * k},
-                240000, true);
+        double severity = Math.min(5.0, 1.0 + fuelBefore * 0.18 + (rbmk ? 0.55 : 0.0));
+        Radiation.emit(serverLevel, pos, center,
+                new double[] {0.15 * severity, 0.55 * severity, 140.0 * severity, 8.0 * severity},
+                24_192_000, true);
 
-        // Consume all fuel/waste before the controller is destroyed. Fuel becomes molten corium.
-        int coriumCount = Math.max(4, size * 3 + hotRods * 2);
         rods = 0;
         spent = 0;
         hotRods = 0;
+        loadedChannels.clear();
         burnLeft = 0f;
         coolant = 0;
         power = 0f;
         decay = 0f;
+        steam = 0f;
+        generating = false;
+        outputCapacity = 0f;
 
         serverLevel.removeBlock(pos, false);
-        float blast = rbmk ? Math.min(24f, 13f + size * 0.7f) : Math.min(20f, 10f + size * 0.55f);
+        float blast = Math.min(24f, 17.5f + fuelBefore * 0.42f + (rbmk ? 1.5f : 0f));
         serverLevel.explode(null, center.x, center.y, center.z, blast, Level.ExplosionInteraction.BLOCK);
 
-        RandomSource random = serverLevel.random;
         BlockPos origin = BlockPos.containing(center);
+        RandomSource random = serverLevel.random;
+        scorchCrater(serverLevel, origin, random);
+        createCorium(serverLevel, origin, fuelBefore, random);
+        igniteNearCrater(serverLevel, origin, random);
+        contaminateZone(serverLevel, origin, random);
+        falloutPatches(serverLevel, origin, random);
 
-        // Dense corium field immediately around the reactor.
-        int coriumPlaced = 0;
-        int coriumRadius = Math.min(12, 5 + size / 2);
-        for (int i = 0; i < coriumCount * 3 && coriumPlaced < coriumCount; i++) {
-            int dx = random.nextInt(coriumRadius * 2 + 1) - coriumRadius;
-            int dz = random.nextInt(coriumRadius * 2 + 1) - coriumRadius;
-            if (dx * dx + dz * dz > coriumRadius * coriumRadius) continue;
-            for (int dy = 8; dy >= -8; dy--) {
-                BlockPos p = origin.offset(dx, dy, dz);
-                if (serverLevel.getBlockState(p).isAir() && !serverLevel.getBlockState(p.below()).isAir()) {
-                    serverLevel.setBlockAndUpdate(p, ModBlocks.CORIUM.get().defaultBlockState());
-                    coriumPlaced++;
-                    break;
-                }
-            }
-        }
+        serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, center.x, center.y + 5, center.z,
+                120, 3.2, 6.0, 3.2, 0.16);
+        serverLevel.sendParticles(ParticleTypes.ASH, center.x, center.y + 3, center.z,
+                60, 4.0, 2.0, 4.0, 0.04);
+        serverLevel.playSound(null, origin, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 4.0f, 0.45f);
+    }
 
-        // The whole 150-block area is visibly damaged without trying to rewrite every block.
-        int zoneRadius = 150;
-        int samples = Math.min(4500, 1200 + size * 80);
-        for (int i = 0; i < samples; i++) {
-            int dx = random.nextInt(zoneRadius * 2 + 1) - zoneRadius;
-            int dz = random.nextInt(zoneRadius * 2 + 1) - zoneRadius;
-            if (dx * dx + dz * dz > zoneRadius * zoneRadius) continue;
-            int surfaceY = serverLevel.getHeight(Heightmap.Types.WORLD_SURFACE, origin.getX() + dx, origin.getZ() + dz);
-            BlockPos column = new BlockPos(origin.getX() + dx, surfaceY, origin.getZ() + dz);
-            for (int dy = 0; dy < 8; dy++) {
-                BlockPos p = column.below(dy);
-                BlockState state = serverLevel.getBlockState(p);
-                if (state.isAir()) continue;
-                BlockPos above = p.above();
-                BlockState aboveState = serverLevel.getBlockState(above);
-                if (state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT) || state.is(Blocks.PODZOL)
-                        || state.is(Blocks.COARSE_DIRT)) {
-                    serverLevel.setBlockAndUpdate(p, Blocks.COARSE_DIRT.defaultBlockState());
-                }
-                if (state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT)) {
-                    serverLevel.setBlockAndUpdate(p, Blocks.COARSE_DIRT.defaultBlockState());
-                }
-                if (state.is(Blocks.SHORT_GRASS) || state.is(Blocks.FERN) || state.is(Blocks.TALL_GRASS)) {
-                    serverLevel.setBlockAndUpdate(p, Blocks.DEAD_BUSH.defaultBlockState());
-                }
-                if (state.getBlock().defaultBlockState().is(net.minecraft.tags.BlockTags.LEAVES)) {
-                    serverLevel.setBlockAndUpdate(p, ModBlocks.IRRADIATED_LEAVES.get().defaultBlockState());
-                }
-                if (random.nextInt(18) == 0 && !aboveState.isAir()) {
-                    break;
-                }
-                break;
-            }
-        }
-
-        // Persistent hot spots at the surface.
-        for (int i = 0; i < 180; i++) {
-            int dx = random.nextInt(zoneRadius * 2 + 1) - zoneRadius;
-            int dz = random.nextInt(zoneRadius * 2 + 1) - zoneRadius;
-            if (dx * dx + dz * dz > zoneRadius * zoneRadius) continue;
-            int surfaceY = serverLevel.getHeight(Heightmap.Types.WORLD_SURFACE, origin.getX() + dx, origin.getZ() + dz);
-            BlockPos column = new BlockPos(origin.getX() + dx, surfaceY, origin.getZ() + dz);
-            for (int dy = 0; dy < 8; dy++) {
-                BlockPos p = column.below(dy);
-                if (!serverLevel.getBlockState(p).isAir()) {
-                    if (serverLevel.getBlockState(p).is(Blocks.GRASS_BLOCK)
-                            || serverLevel.getBlockState(p).is(Blocks.DIRT)
-                            || serverLevel.getBlockState(p).is(Blocks.COARSE_DIRT)) {
-                        serverLevel.setBlockAndUpdate(p, ModBlocks.RADIOACTIVE_DEBRIS.get().defaultBlockState());
+    private void scorchCrater(ServerLevel level, BlockPos origin, RandomSource random) {
+        int radius = 30;
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                if (dx * dx + dz * dz > radius * radius) continue;
+                int x = origin.getX() + dx;
+                int z = origin.getZ() + dz;
+                BlockPos probe = new BlockPos(x, origin.getY(), z);
+                if (!level.isLoaded(probe)) continue;
+                int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+                for (int d = 0; d < 4; d++) {
+                    BlockPos p = new BlockPos(x, surfaceY - d, z);
+                    BlockState state = level.getBlockState(p);
+                    if (state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT) || state.is(Blocks.PODZOL)
+                            || state.is(Blocks.COARSE_DIRT) || state.is(Blocks.ROOTED_DIRT)) {
+                        level.setBlockAndUpdate(p, ModBlocks.SCORCHED_EARTH.get().defaultBlockState());
+                    } else if (state.is(Blocks.STONE) || state.is(Blocks.DEEPSLATE) || state.is(Blocks.GRAVEL)
+                            || state.is(Blocks.ANDESITE) || state.is(Blocks.DIORITE) || state.is(Blocks.GRANITE)) {
+                        if (d < 2 || random.nextInt(3) == 0) {
+                            level.setBlockAndUpdate(p, ModBlocks.CHARRED_STONE.get().defaultBlockState());
+                        }
                     }
-                    break;
                 }
+                for (int dy = 1; dy <= 12; dy++) {
+                    BlockPos foliage = new BlockPos(x, surfaceY + dy, z);
+                    if (level.getBlockState(foliage).is(net.minecraft.tags.BlockTags.LEAVES)) {
+                        level.setBlockAndUpdate(foliage, ModBlocks.IRRADIATED_LEAVES.get().defaultBlockState());
+                    }
+                }
+            }
+        }
+    }
+
+    private void createCorium(ServerLevel level, BlockPos origin, int fuelBefore, RandomSource random) {
+        int count = Mth.clamp(8 + fuelBefore * 2, 8, 36);
+        int radius = 5 + Math.min(7, fuelBefore / 3);
+        int placed = 0;
+        for (int i = 0; i < count * 3 && placed < count; i++) {
+            int dx = random.nextInt(radius * 2 + 1) - radius;
+            int dz = random.nextInt(radius * 2 + 1) - radius;
+            if (dx * dx + dz * dz > radius * radius) continue;
+            int x = origin.getX() + dx;
+            int z = origin.getZ() + dz;
+            int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+            BlockPos ground = new BlockPos(x, y, z);
+            BlockState groundState = level.getBlockState(ground);
+            if (!level.isLoaded(ground) || groundState.isAir() || !groundState.isSolid()) continue;
+            BlockPos pool = ground.above();
+            if (level.getBlockState(pool).isAir()) {
+                placeCorium(level, pool);
+                placed++;
+            }
+        }
+        for (int stream = 0; stream < Math.min(6, 2 + fuelBefore / 3); stream++) {
+            int x = origin.getX() + random.nextInt(9) - 4;
+            int z = origin.getZ() + random.nextInt(9) - 4;
+            for (int step = 0; step < 5; step++) {
+                if ((x - origin.getX()) * (x - origin.getX()) + (z - origin.getZ()) * (z - origin.getZ()) > 144) break;
+                int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+                BlockPos p = new BlockPos(x, y + 1, z);
+                if (level.isLoaded(p) && level.getBlockState(p).isAir()) placeCorium(level, p);
+                x = Mth.clamp(x + random.nextInt(3) - 1, origin.getX() - 12, origin.getX() + 12);
+                z = Mth.clamp(z + random.nextInt(3) - 1, origin.getZ() - 12, origin.getZ() + 12);
+            }
+        }
+    }
+
+    private void placeCorium(ServerLevel level, BlockPos pos) {
+        if (!level.getBlockState(pos).isAir()) return;
+        BlockPos below = pos.below();
+        BlockState belowState = level.getBlockState(below);
+        if (belowState.is(Blocks.GRASS_BLOCK) || belowState.is(Blocks.DIRT) || belowState.is(Blocks.COARSE_DIRT)
+                || belowState.is(Blocks.PODZOL) || belowState.is(Blocks.ROOTED_DIRT)
+                || belowState.is(ModBlocks.IRRADIATED_SOIL.get())) {
+            level.setBlockAndUpdate(below, ModBlocks.SCORCHED_EARTH.get().defaultBlockState());
+        } else if (belowState.is(Blocks.STONE) || belowState.is(Blocks.DEEPSLATE)) {
+            level.setBlockAndUpdate(below, ModBlocks.CHARRED_STONE.get().defaultBlockState());
+        }
+        level.setBlockAndUpdate(pos, ModBlocks.CORIUM.get().defaultBlockState());
+    }
+
+    private void igniteNearCrater(ServerLevel level, BlockPos origin, RandomSource random) {
+        for (int i = 0; i < 42; i++) {
+            int dx = random.nextInt(35) - 17;
+            int dz = random.nextInt(35) - 17;
+            if (dx * dx + dz * dz > 18 * 18) continue;
+            int x = origin.getX() + dx;
+            int z = origin.getZ() + dz;
+            int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+            BlockPos ground = new BlockPos(x, y, z);
+            BlockPos fire = ground.above();
+            if (level.isLoaded(fire) && level.getBlockState(ground).isSolid() && level.getBlockState(fire).isAir()) {
+                level.setBlockAndUpdate(fire, Blocks.FIRE.defaultBlockState());
+            }
+        }
+    }
+
+    private void contaminateZone(ServerLevel level, BlockPos origin, RandomSource random) {
+        final int radius = 150;
+        final int samples = 7500;
+        for (int i = 0; i < samples; i++) {
+            int dx = random.nextInt(radius * 2 + 1) - radius;
+            int dz = random.nextInt(radius * 2 + 1) - radius;
+            int distanceSq = dx * dx + dz * dz;
+            if (distanceSq > radius * radius || distanceSq < 28 * 28) continue;
+            int x = origin.getX() + dx;
+            int z = origin.getZ() + dz;
+            BlockPos probe = new BlockPos(x, origin.getY(), z);
+            if (!level.isLoaded(probe)) continue;
+            double distance = Math.sqrt(distanceSq);
+            double density = 0.78 - (distance / radius) * 0.52;
+            int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+            BlockPos soil = new BlockPos(x, surfaceY, z);
+            BlockState soilState = level.getBlockState(soil);
+            if ((soilState.is(Blocks.GRASS_BLOCK) || soilState.is(Blocks.DIRT) || soilState.is(Blocks.PODZOL)
+                    || soilState.is(Blocks.COARSE_DIRT) || soilState.is(Blocks.ROOTED_DIRT)) && random.nextDouble() < density) {
+                level.setBlockAndUpdate(soil, ModBlocks.IRRADIATED_SOIL.get().defaultBlockState());
+            }
+            double leafChance = Mth.clamp(density + 0.12, 0.15, 0.92);
+            for (int dy = 1; dy <= 14; dy++) {
+                BlockPos foliage = new BlockPos(x, surfaceY + dy, z);
+                BlockState foliageState = level.getBlockState(foliage);
+                if (foliageState.is(net.minecraft.tags.BlockTags.LEAVES) && random.nextDouble() < leafChance) {
+                    level.setBlockAndUpdate(foliage, ModBlocks.IRRADIATED_LEAVES.get().defaultBlockState());
+                } else if ((foliageState.is(Blocks.SHORT_GRASS) || foliageState.is(Blocks.FERN)
+                        || foliageState.is(Blocks.TALL_GRASS) || foliageState.is(Blocks.DEAD_BUSH)) && random.nextDouble() < density) {
+                    level.setBlockAndUpdate(foliage, Blocks.DEAD_BUSH.defaultBlockState());
+                }
+            }
+        }
+    }
+
+    private void falloutPatches(ServerLevel level, BlockPos origin, RandomSource random) {
+        for (int i = 0; i < 32; i++) {
+            int dx = random.nextInt(65) - 32;
+            int dz = random.nextInt(65) - 32;
+            if (dx * dx + dz * dz > 36 * 36) continue;
+            int x = origin.getX() + dx;
+            int z = origin.getZ() + dz;
+            int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+            BlockPos patch = new BlockPos(x, y, z);
+            if (level.isLoaded(patch) && (level.getBlockState(patch).is(ModBlocks.SCORCHED_EARTH.get())
+                    || level.getBlockState(patch).is(ModBlocks.IRRADIATED_SOIL.get()))) {
+                level.setBlockAndUpdate(patch, ModBlocks.RADIOACTIVE_DEBRIS.get().defaultBlockState());
             }
         }
     }
 
     // ------------------------------------------------------------ player actions
 
-    public void insertRod(Player player, ItemStack stack) {
-        refreshStructure();
+    public boolean canInteractFromInside(Player player, BlockPos component) {
+        // Interactions can happen immediately after the player finishes the multiblock.
+        // Refresh here so the 40-tick scan interval does not make the interior look unusable.
         if (!structure.valid) {
+            refreshStructure();
+        }
+        if (!structure.valid || level == null) return false;
+        return structure.containsInterior(player.blockPosition())
+                && (structure.containsInterior(component) || player.distanceToSqr(component.getX() + 0.5,
+                        component.getY() + 0.5, component.getZ() + 0.5) < 12.25);
+    }
+
+    public void insertRodIntoChannel(Player player, ItemStack stack, BlockPos channel) {
+        refreshStructure();
+        if (!structure.valid || !structure.containsInterior(channel)
+                || !level.getBlockState(channel).is(ModBlocks.FUEL_CHANNEL.get())) {
             sendInvalid(player);
             return;
         }
-        if (burnLeft > 0f || power > 0.01f) {
+        if (!canInteractFromInside(player, channel)) {
+            player.displayClientMessage(Component.translatable("message.createatomic.inside_only"), true);
+            return;
+        }
+        if (burnLeft > 0f || power > 0.01f || decay > 0.01f) {
             player.displayClientMessage(Component.translatable("message.createatomic.busy"), true);
             return;
         }
-        if (rods >= structure.fuel) {
-            player.displayClientMessage(Component.translatable("message.createatomic.full"), true);
+        if (loadedChannels.contains(channel.asLong())) {
+            player.displayClientMessage(Component.translatable("message.createatomic.channel_loaded"), true);
             return;
         }
-        rods++;
-        if (!player.isCreative()) {
-            stack.shrink(1);
+        loadedChannels.add(channel.asLong());
+        rods = loadedChannels.size();
+        BlockState channelState = level.getBlockState(channel);
+        if (channelState.is(ModBlocks.FUEL_CHANNEL.get())) {
+            level.setBlock(channel, channelState.setValue(com.createatomic.block.FuelChannelBlock.LOADED, true), 3);
         }
-        level.playSound(null, worldPosition, SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 1f, 1f);
+        if (!player.isCreative()) stack.shrink(1);
+        level.playSound(null, channel, SoundEvents.IRON_TRAPDOOR_CLOSE, SoundSource.BLOCKS, 0.8f, 0.8f);
         notifyUpdate();
         status(player);
     }
 
+    public void removeRodFromChannel(Player player, BlockPos channel) {
+        refreshStructure();
+        if (!structure.valid || !loadedChannels.contains(channel.asLong()) || !canInteractFromInside(player, channel)) return;
+        if (burnLeft > 0f || power > 0.01f || decay > 0.01f || temp > 120f) {
+            player.displayClientMessage(Component.translatable("message.createatomic.too_hot"), true);
+            return;
+        }
+        loadedChannels.remove(channel.asLong());
+        rods = loadedChannels.size();
+        BlockState channelState = level.getBlockState(channel);
+        if (channelState.is(ModBlocks.FUEL_CHANNEL.get())) {
+            level.setBlock(channel, channelState.setValue(com.createatomic.block.FuelChannelBlock.LOADED, false), 3);
+        }
+        ItemStack fuel = new ItemStack(ModItems.FUEL_ROD.get());
+        if (!player.getInventory().add(fuel)) player.drop(fuel, false);
+        notifyUpdate();
+        status(player);
+    }
+
+    public void addWaterFromInside(Player player, InteractionHand hand) {
+        refreshStructure();
+        if (!structure.valid || !structure.containsInterior(player.blockPosition())) {
+            player.displayClientMessage(Component.translatable("message.createatomic.inside_only"), true);
+            return;
+        }
+        addWater(player, hand);
+    }
+
+    public void addWaterFromExternal(Player player, InteractionHand hand) {
+        addWater(player, hand);
+    }
+
     public void addBucket(Player player, InteractionHand hand) {
+        addWaterFromExternal(player, hand);
+    }
+
+    private void addWater(Player player, InteractionHand hand) {
         if (coolant + 1000 > TANK_CAPACITY) {
             player.displayClientMessage(Component.translatable("message.createatomic.tank_full"), true);
             return;
         }
         coolant += 1000;
-        if (!player.isCreative()) {
-            player.setItemInHand(hand, new ItemStack(Items.BUCKET));
-        }
-        level.playSound(null, worldPosition, SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1f, 1f);
+        if (!player.isCreative()) player.setItemInHand(hand, new ItemStack(Items.BUCKET));
+        level.playSound(null, player.blockPosition(), SoundEvents.BUCKET_EMPTY, SoundSource.BLOCKS, 1f, 1f);
         setChanged();
         status(player);
     }
 
     public void extract(Player player) {
-        if (power > 0.01f || decay > 0.002f || temp > 150f) {
+        refreshStructure();
+        if (power > 0.01f || decay > 0.002f || temp > 120f) {
             player.displayClientMessage(Component.translatable("message.createatomic.too_hot"), true);
             return;
         }
@@ -481,9 +654,7 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
             return;
         }
         for (ItemStack stack : takeOutputs()) {
-            if (!stack.isEmpty() && !player.getInventory().add(stack)) {
-                player.drop(stack, false);
-            }
+            if (!stack.isEmpty() && !player.getInventory().add(stack)) player.drop(stack, false);
         }
         notifyUpdate();
         status(player);
@@ -495,12 +666,11 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
             sendInvalid(player);
             return;
         }
-        Component type = Component.translatable(structure.rbmk
-                ? "message.createatomic.type_rbmk" : "message.createatomic.type_pwr");
+        Component type = Component.translatable(structure.rbmk ? "message.createatomic.type_rbmk" : "message.createatomic.type_pwr");
         int fuelPercent = burnLeft > 0f ? Math.round(burnLeft / FUEL_UNITS * 100f) : 100;
-        player.displayClientMessage(Component.translatable("message.createatomic.status",
-                type, rods, structure.fuel, Math.round(power * 100f), Math.round(temp),
-                String.format(Locale.ROOT, "%.1f", coolant / 1000f), Math.round(rodPos * 100f), fuelPercent), true);
+        player.displayClientMessage(Component.translatable("message.createatomic.status", type, rods, structure.fuel,
+                Math.round(power * 100f), Math.round(temp), String.format(Locale.ROOT, "%.1f", coolant / 1000f),
+                Math.round(rodPos * 100f), fuelPercent), true);
     }
 
     private void sendInvalid(Player player) {
@@ -508,31 +678,23 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
                 Component.translatable("message.createatomic." + structure.error, structure.errorArgs)), true);
     }
 
-    /** Called when the block is broken: spill whatever is inside. */
     public void dropContents() {
-        if (level == null || level.isClientSide) {
-            return;
-        }
+        if (level == null || level.isClientSide) return;
         for (ItemStack stack : takeOutputs()) {
-            if (!stack.isEmpty()) {
-                Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5,
-                        worldPosition.getZ() + 0.5, stack);
-            }
+            if (!stack.isEmpty()) Containers.dropItemStack(level, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5,
+                    worldPosition.getZ() + 0.5, stack);
         }
     }
 
-    /** Empties the reactor. Partially burnt rods come back as spent rods. */
     private ItemStack[] takeOutputs() {
         int fuel = burnLeft > 0f ? 0 : rods;
         int waste = spent + (burnLeft > 0f ? rods : 0);
         rods = 0;
         spent = 0;
-        burnLeft = 0f;
         hotRods = 0;
-        return new ItemStack[] {
-                new ItemStack(ModItems.FUEL_ROD.get(), fuel),
-                new ItemStack(ModItems.SPENT_FUEL_ROD.get(), waste)
-        };
+        burnLeft = 0f;
+        loadedChannels.clear();
+        return new ItemStack[] {new ItemStack(ModItems.FUEL_ROD.get(), fuel), new ItemStack(ModItems.SPENT_FUEL_ROD.get(), waste)};
     }
 
     // ------------------------------------------------------------ goggles
@@ -563,6 +725,8 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
         Component type = Component.translatable(viewRbmk
                 ? "message.createatomic.type_rbmk" : "message.createatomic.type_pwr");
         tooltip.add(gogglesLine("createatomic.goggles.type", type.copy().withStyle(ChatFormatting.AQUA)));
+        tooltip.add(gogglesLine("createatomic.goggles.size", Component.literal(viewWidth + "x" + viewHeight + "x" + viewDepth)
+                .withStyle(ChatFormatting.GRAY)));
 
         ChatFormatting tempColor = temp >= SCRAM_TEMP ? ChatFormatting.RED
                 : temp >= 450f ? ChatFormatting.YELLOW : ChatFormatting.GREEN;
@@ -621,9 +785,16 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
         tag.putFloat("Steam", steam);
         tag.putFloat("OutputCapacity", outputCapacity);
         tag.putBoolean("Generating", generating);
+        long[] channels = new long[loadedChannels.size()];
+        int channelIndex = 0;
+        for (long channel : loadedChannels) channels[channelIndex++] = channel;
+        tag.putLongArray("LoadedChannels", channels);
         tag.putBoolean("StructValid", structure.valid);
         tag.putBoolean("StructRbmk", structure.rbmk);
         tag.putInt("StructFuel", structure.fuel);
+        tag.putInt("StructWidth", structure.width);
+        tag.putInt("StructHeight", structure.height);
+        tag.putInt("StructDepth", structure.depth);
         tag.putString("StructError", structure.error);
         int[] errorArgs = new int[structure.errorArgs.length];
         for (int i = 0; i < errorArgs.length; i++) {
@@ -648,9 +819,14 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
         steam = tag.getFloat("Steam");
         outputCapacity = tag.getFloat("OutputCapacity");
         generating = tag.getBoolean("Generating");
+        loadedChannels.clear();
+        for (long channel : tag.getLongArray("LoadedChannels")) loadedChannels.add(channel);
         viewValid = tag.getBoolean("StructValid");
         viewRbmk = tag.getBoolean("StructRbmk");
         viewFuel = tag.getInt("StructFuel");
+        viewWidth = tag.getInt("StructWidth");
+        viewHeight = tag.getInt("StructHeight");
+        viewDepth = tag.getInt("StructDepth");
         viewError = tag.contains("StructError") ? tag.getString("StructError") : "err_interior";
         viewErrorArgs = tag.getIntArray("StructErrorArgs");
         scanned = false;

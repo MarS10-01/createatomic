@@ -20,19 +20,19 @@ public class ModItems {
 
     // ---- materials (emission order: alpha, beta, gamma, neutron; dose rate at 1 block, scaled by sqrt(count) in inventory)
     public static final DeferredItem<Item> RAW_RADICIA = ITEMS.register("raw_radicia",
-            () -> new RadioactiveItem(new Item.Properties(), 2.0e-4, 4.0e-4, 2.0e-4, 0.0));
+            () -> new RadioactiveItem(new Item.Properties(), 0.0015, 0.0035, 0.0025, 0.0002));
     public static final DeferredItem<Item> CRUSHED_RADICIA = ITEMS.register("crushed_radicia",
-            () -> new RadioactiveItem(new Item.Properties(), 3.0e-4, 5.0e-4, 2.5e-4, 0.0));
+            () -> new RadioactiveItem(new Item.Properties(), 0.0022, 0.0050, 0.0035, 0.0003));
     public static final DeferredItem<Item> RADICIA_INGOT = ITEMS.register("radicia_ingot",
-            () -> new RadioactiveItem(new Item.Properties(), 2.5e-4, 6.0e-4, 3.0e-4, 0.0));
+            () -> new RadioactiveItem(new Item.Properties(), 0.0020, 0.0055, 0.0040, 0.0003));
     public static final DeferredItem<Item> RADICIA_PLATE = ITEMS.register("radicia_plate",
-            () -> new RadioactiveItem(new Item.Properties(), 2.5e-4, 6.0e-4, 3.0e-4, 0.0));
+            () -> new RadioactiveItem(new Item.Properties(), 0.0020, 0.0055, 0.0040, 0.0003));
 
     // ---- fuel
     public static final DeferredItem<Item> FUEL_ROD = ITEMS.register("radicia_fuel_rod",
-            () -> new RadioactiveItem(new Item.Properties().stacksTo(16), 0.0, 0.004, 0.003, 0.001));
+            () -> new RadioactiveItem(new Item.Properties().stacksTo(16), 0.0, 0.025, 0.045, 0.008));
     public static final DeferredItem<Item> SPENT_FUEL_ROD = ITEMS.register("spent_fuel_rod",
-            () -> new RadioactiveItem(new Item.Properties().stacksTo(16), 0.001, 0.02, 0.015, 0.004));
+            () -> new RadioactiveItem(new Item.Properties().stacksTo(16), 0.004, 0.080, 0.120, 0.025));
 
     // ---- safety equipment
     public static final DeferredItem<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",

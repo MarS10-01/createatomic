@@ -24,7 +24,7 @@ import net.minecraft.world.phys.Vec3;
  */
 public final class Radiation {
     public static final String DOSE_KEY = "createatomic_dose";
-    public static final double RECOVERY = 0.0005;
+    public static final double RECOVERY = 0.00008;
     private static final int SCAN = 10;
 
     private record Emitter(Vec3 pos, double[] strength, long start, long end) {}
