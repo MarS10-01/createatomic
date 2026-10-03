@@ -399,7 +399,7 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
                 120, 3.2, 6.0, 3.2, 0.16);
         serverLevel.sendParticles(ParticleTypes.ASH, center.x, center.y + 3, center.z,
                 60, 4.0, 2.0, 4.0, 0.04);
-        serverLevel.playSound(null, origin, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 4.0f, 0.45f);
+        serverLevel.playSound(null, origin, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 4.0f, 0.45f);
     }
 
     private void scorchCrater(ServerLevel level, BlockPos origin, RandomSource random) {

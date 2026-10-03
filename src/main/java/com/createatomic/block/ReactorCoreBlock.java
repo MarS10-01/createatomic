@@ -12,6 +12,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -63,16 +64,16 @@ public class ReactorCoreBlock extends RotatedPillarKineticBlock implements IBE<R
     }
 
     @Override
-    public net.minecraft.world.item.ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
+    public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
             BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!stack.is(Items.WATER_BUCKET)) {
-            return net.minecraft.world.item.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (level.isClientSide) {
-            return net.minecraft.world.item.ItemInteractionResult.SUCCESS;
+            return ItemInteractionResult.SUCCESS;
         }
         withBlockEntityDo(level, pos, be -> be.addWaterFromExternal(player, hand));
-        return net.minecraft.world.item.ItemInteractionResult.SUCCESS;
+        return ItemInteractionResult.SUCCESS;
     }
 
     @Override
@@ -86,7 +87,7 @@ public class ReactorCoreBlock extends RotatedPillarKineticBlock implements IBE<R
     }
 
     @Override
-    public boolean playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide) {
             withBlockEntityDo(level, pos, ReactorCoreBlockEntity::dropContents);
         }

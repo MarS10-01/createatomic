@@ -4,6 +4,7 @@ import com.createatomic.registry.ModBlocks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -36,7 +37,7 @@ public class CoriumBlock extends RadioactiveBlock {
     }
 
     @Override
-    public void randomTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
+    public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
         BlockPos below = pos.below();
         BlockState belowState = level.getBlockState(below);
         if (belowState.is(Blocks.GRASS_BLOCK) || belowState.is(Blocks.DIRT) || belowState.is(Blocks.PODZOL)

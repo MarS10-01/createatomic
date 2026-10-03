@@ -10,8 +10,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.RotatedPillarBlock;
-import net.minecraft.world.level.material.FluidTags;
+import net.minecraft.world.level.block.RotatedPillarBlock;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -244,7 +244,7 @@ public final class ReactorStructure {
             // Front and back walls.
             for (int du = minU; du <= maxU && perimeterOk; du++) {
                 BlockPos front = offsetAtY(controller, inward, u, 0, du, y);
-                BlockPos back = offsetAtY(controller, inward, depth + 1, du, 0, y);
+                BlockPos back = offsetAtY(controller, inward, u, depth + 1, du, y);
                 perimeterOk &= isBoundary(level.getBlockState(front));
                 perimeterOk &= isBoundary(level.getBlockState(back));
             }
@@ -274,7 +274,7 @@ public final class ReactorStructure {
             return result;
         }
 
-        BlockPos topEntrance = offsetAtY(controller, inward, Math.max(1, depth / 2 + 1), u, 0, floorY + chamberHeight + 1);
+        BlockPos topEntrance = offsetAtY(controller, inward, u, Math.max(1, depth / 2 + 1), 0, floorY + chamberHeight + 1);
         if (!level.getBlockState(topEntrance).isAir()) {
             result.fail("err_roof");
             return result;
@@ -370,6 +370,6 @@ public final class ReactorStructure {
         return new BlockPos(p.getX(), y, p.getZ());
     }
 
-    private ReactorStructure() {
+    public ReactorStructure() {
     }
 }
