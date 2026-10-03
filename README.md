@@ -123,3 +123,7 @@
 
 Нужны Java 21 и интернет.
 Откройте проект как Gradle-проект в IntelliJ IDEA и запустите `build` или `runClient`.
+
+## Reactor architecture (current)
+
+The reactor is now a sealed industrial multiblock rather than an open box. Build a 9x9x9 to 13x13x13 internal chamber with a casing floor, four casing walls and a solid roof. The roof contains exactly one Reactor Service Hatch, plus a Steam Outlet and Control Rod Drive. At least two Coolant Manifolds must be installed on the roof or outer walls. Enter through the hatch while it is open, install a dense grid of fuel channels/control rods/optional graphite, fill the remaining active volume with water, then close the hatch before operation. Create fluid pipes can connect to the dedicated coolant manifolds or any casing face.
