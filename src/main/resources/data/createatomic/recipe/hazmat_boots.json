@@ -3,18 +3,11 @@
   "category": "misc",
   "pattern": [
     "W W",
-    "I I"
+    "G G"
   ],
   "key": {
-    "W": {
-      "item": "minecraft:yellow_wool"
-    },
-    "G": {
-      "item": "minecraft:glass_pane"
-    },
-    "I": {
-      "item": "create:iron_sheet"
-    }
+    "W": { "item": "minecraft:yellow_wool" },
+    "G": { "item": "minecraft:glass_pane" }
   },
   "result": {
     "id": "createatomic:hazmat_boots",
