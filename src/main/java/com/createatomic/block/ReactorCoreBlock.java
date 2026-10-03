@@ -13,6 +13,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -20,13 +21,16 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * Nuclear reactor core. A kinetic generator: shafts attach on both ends of its axis,
- * the four remaining sides should touch water source blocks for cooling.
+ * Reactor Controller: the brain of the multiblock reactor and a Create kinetic generator.
  *
- * Controls:
- *  - right-click with a fuel rod        : load a rod (while idle)
- *  - right-click with an empty hand      : start / SCRAM
- *  - sneak + right-click, empty hand     : unload rods
+ * Put it IN the wall of the reactor chamber. Its shaft axis connects to your Create network.
+ *
+ *  - redstone signal (0-15) = how far the control rods are withdrawn (no signal = rods fully inserted = off)
+ *  - comparator output     = core temperature (0-15), use it to build your own safety systems
+ *  - right-click, fuel rod  : load a rod (reactor must be idle)
+ *  - right-click, water bucket or a Create pipe/pump : coolant
+ *  - right-click, empty hand: status / structure check
+ *  - sneak + right-click, empty hand: unload (reactor must be cold)
  */
 public class ReactorCoreBlock extends RotatedPillarKineticBlock implements IBE<ReactorCoreBlockEntity> {
 
@@ -57,13 +61,19 @@ public class ReactorCoreBlock extends RotatedPillarKineticBlock implements IBE<R
     @Override
     public ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                            Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!stack.is(ModItems.FUEL_ROD.get())) {
+        boolean fuel = stack.is(ModItems.FUEL_ROD.get());
+        boolean water = stack.is(Items.WATER_BUCKET);
+        if (!fuel && !water) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (level.isClientSide) {
             return ItemInteractionResult.SUCCESS;
         }
-        withBlockEntityDo(level, pos, be -> be.insertRod(player, stack));
+        if (fuel) {
+            withBlockEntityDo(level, pos, be -> be.insertRod(player, stack));
+        } else {
+            withBlockEntityDo(level, pos, be -> be.addBucket(player, hand));
+        }
         return ItemInteractionResult.SUCCESS;
     }
 
@@ -80,10 +90,20 @@ public class ReactorCoreBlock extends RotatedPillarKineticBlock implements IBE<R
             if (player.isShiftKeyDown()) {
                 be.extract(player);
             } else {
-                be.toggle(player);
+                be.status(player);
             }
         });
         return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        return getBlockEntityOptional(level, pos).map(ReactorCoreBlockEntity::getAnalogSignal).orElse(0);
     }
 
     @Override

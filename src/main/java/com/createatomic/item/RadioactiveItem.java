@@ -1,33 +1,19 @@
 package com.createatomic.item;
 
-import com.createatomic.registry.ModEffects;
+import com.createatomic.radiation.RadiationType;
 
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
-/** An item that irradiates whoever carries it. */
+/** An item that irradiates its owner (see Radiation.carried). */
 public class RadioactiveItem extends Item {
-    private final int amplifier;
+    private final double[] emission;
 
-    public RadioactiveItem(Properties properties, int amplifier) {
+    public RadioactiveItem(Properties properties, double alpha, double beta, double gamma, double neutron) {
         super(properties);
-        this.amplifier = amplifier;
+        this.emission = new double[] {alpha, beta, gamma, neutron};
     }
 
-    @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
-        super.inventoryTick(stack, level, entity, slotId, isSelected);
-        if (level.isClientSide || !(entity instanceof LivingEntity living) || level.getGameTime() % 40 != 0) {
-            return;
-        }
-        if (entity instanceof Player p && (p.isCreative() || p.isSpectator())) {
-            return;
-        }
-        living.addEffect(new MobEffectInstance(ModEffects.RADIATION, 100, amplifier));
+    public double emission(RadiationType type) {
+        return emission[type.ordinal()];
     }
 }
