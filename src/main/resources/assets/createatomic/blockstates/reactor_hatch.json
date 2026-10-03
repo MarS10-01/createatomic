@@ -1,0 +1,1 @@
+{"variants":{"open=false":{"model":"createatomic:block/reactor_hatch_closed"},"open=true":{"model":"createatomic:block/reactor_hatch_open"}}}
