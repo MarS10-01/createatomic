@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "createatomic:block/reinforced_concrete"
+    }
+  }
+}

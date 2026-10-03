@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "createatomic:block/control_rod_end",
+    "side": "createatomic:block/control_rod_side"
+  }
+}
