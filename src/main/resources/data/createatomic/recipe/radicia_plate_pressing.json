@@ -1,0 +1,13 @@
+{
+  "type": "create:pressing",
+  "ingredients": [
+    {
+      "item": "createatomic:radicia_ingot"
+    }
+  ],
+  "results": [
+    {
+      "id": "createatomic:radicia_plate"
+    }
+  ]
+}

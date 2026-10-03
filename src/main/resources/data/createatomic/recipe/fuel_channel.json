@@ -2,19 +2,23 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "SPS",
-    "SPS"
+    "IPI",
+    "PCP",
+    "IPI"
   ],
   "key": {
-    "S": {
+    "I": {
       "item": "create:iron_sheet"
     },
     "P": {
       "item": "createatomic:radicia_plate"
+    },
+    "C": {
+      "item": "createatomic:reactor_casing"
     }
   },
   "result": {
-    "id": "createatomic:radicia_fuel_rod",
-    "count": 1
+    "id": "createatomic:fuel_channel",
+    "count": 2
   }
 }

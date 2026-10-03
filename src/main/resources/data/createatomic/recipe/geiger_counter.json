@@ -2,20 +2,23 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "SSS",
-    "SCS",
+    "STS",
+    "SRS",
     "SSS"
   ],
   "key": {
     "S": {
       "item": "create:iron_sheet"
     },
-    "C": {
-      "item": "create:brass_casing"
+    "T": {
+      "item": "create:electron_tube"
+    },
+    "R": {
+      "item": "minecraft:redstone"
     }
   },
   "result": {
-    "id": "createatomic:reactor_casing",
-    "count": 4
+    "id": "createatomic:geiger_counter",
+    "count": 1
   }
 }

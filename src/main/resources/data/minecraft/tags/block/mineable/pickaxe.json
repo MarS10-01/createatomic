@@ -5,6 +5,12 @@
     "createatomic:deepslate_radicia_ore",
     "createatomic:radicia_block",
     "createatomic:reactor_casing",
-    "createatomic:reactor_core"
+    "createatomic:reactor_core",
+    "createatomic:fuel_channel",
+    "createatomic:control_rod",
+    "createatomic:graphite_block",
+    "createatomic:reinforced_concrete",
+    "createatomic:borated_concrete",
+    "createatomic:radioactive_debris"
   ]
 }

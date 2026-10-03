@@ -2,11 +2,14 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "CSC",
-    "RPR",
-    "CSC"
+    "PCP",
+    "SRS",
+    "PCP"
   ],
   "key": {
+    "P": {
+      "item": "create:precision_mechanism"
+    },
     "C": {
       "item": "createatomic:reactor_casing"
     },
@@ -15,9 +18,6 @@
     },
     "R": {
       "item": "createatomic:radicia_ingot"
-    },
-    "P": {
-      "item": "create:precision_mechanism"
     }
   },
   "result": {
