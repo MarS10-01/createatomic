@@ -1,5 +1,6 @@
 package com.createatomic.block.entity;
 
+import java.util.List;
 import java.util.Locale;
 
 import com.createatomic.radiation.Radiation;
@@ -8,6 +9,7 @@ import com.createatomic.registry.ModBlocks;
 import com.createatomic.registry.ModItems;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
@@ -69,6 +71,13 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
 
     private ReactorStructure structure = new ReactorStructure();
     private boolean scanned;
+
+    // Structure info synced to the client (the multiblock scan only runs on the server). Used by the goggle tooltip.
+    private boolean viewValid;
+    private boolean viewRbmk;
+    private int viewFuel;
+    private String viewError = "err_interior";
+    private int[] viewErrorArgs = new int[0];
 
     private final IFluidHandler coolantHandler = new IFluidHandler() {
         @Override
@@ -260,6 +269,9 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
         if (temp >= MELT_TEMP) {
             meltdown(serverLevel);
             return;
+        }
+        if (level.getGameTime() % 20 == 0) {
+            sendData(); // keeps the goggle tooltip up to date
         }
         setChanged();
     }
@@ -454,6 +466,74 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
         };
     }
 
+    // ------------------------------------------------------------ goggles
+
+    private static final String PAD = "    ";
+
+    /** Shown while the player wears Create's Engineer's Goggles and looks at the controller. */
+    @Override
+    public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+        super.addToGoggleTooltip(tooltip, isPlayerSneaking);
+
+        tooltip.add(Component.literal(PAD).append(
+                Component.translatable("createatomic.goggles.header").withStyle(ChatFormatting.GOLD)));
+
+        if (!viewValid) {
+            tooltip.add(gogglesLine("createatomic.goggles.structure",
+                    Component.translatable("createatomic.goggles.invalid").withStyle(ChatFormatting.RED)));
+            Object[] args = new Object[viewErrorArgs.length];
+            for (int i = 0; i < args.length; i++) {
+                args[i] = viewErrorArgs[i];
+            }
+            tooltip.add(Component.literal(PAD + PAD).append(
+                    Component.translatable("message.createatomic." + viewError, args)
+                            .withStyle(ChatFormatting.DARK_RED)));
+            return true;
+        }
+
+        Component type = Component.translatable(viewRbmk
+                ? "message.createatomic.type_rbmk" : "message.createatomic.type_pwr");
+        tooltip.add(gogglesLine("createatomic.goggles.type", type.copy().withStyle(ChatFormatting.AQUA)));
+
+        ChatFormatting tempColor = temp >= SCRAM_TEMP ? ChatFormatting.RED
+                : temp >= 450f ? ChatFormatting.YELLOW : ChatFormatting.GREEN;
+        tooltip.add(gogglesLine("createatomic.goggles.temperature",
+                Component.literal(Math.round(temp) + " \u00b0C").withStyle(tempColor)));
+        tooltip.add(gogglesLine("createatomic.goggles.power",
+                Component.literal(Math.round(power * 100f) + "%").withStyle(ChatFormatting.AQUA)));
+        tooltip.add(gogglesLine("createatomic.goggles.control",
+                Component.literal(Math.round(rodPos * 100f) + "%").withStyle(ChatFormatting.AQUA)));
+
+        int fuelPercent = burnLeft > 0f ? Math.round(burnLeft / FUEL_UNITS * 100f) : 100;
+        tooltip.add(gogglesLine("createatomic.goggles.fuel",
+                Component.literal(rods + "/" + viewFuel + " (" + fuelPercent + "%)").withStyle(ChatFormatting.AQUA)));
+        if (spent > 0) {
+            tooltip.add(gogglesLine("createatomic.goggles.spent",
+                    Component.literal(String.valueOf(spent)).withStyle(ChatFormatting.GOLD)));
+        }
+
+        boolean lowCoolant = coolant < TANK_CAPACITY * 0.15f;
+        tooltip.add(gogglesLine("createatomic.goggles.coolant",
+                Component.literal(String.format(Locale.ROOT, "%.1f / %.0f B", coolant / 1000f, TANK_CAPACITY / 1000f))
+                        .withStyle(lowCoolant ? ChatFormatting.RED : ChatFormatting.AQUA)));
+
+        if (temp >= SCRAM_TEMP) {
+            tooltip.add(Component.literal(PAD).append(
+                    Component.translatable("createatomic.goggles.scram").withStyle(ChatFormatting.RED)));
+        } else if (lowCoolant && (power > 0.01f || decay > 0.002f)) {
+            tooltip.add(Component.literal(PAD).append(
+                    Component.translatable("createatomic.goggles.low_coolant").withStyle(ChatFormatting.RED)));
+        }
+        return true;
+    }
+
+    private static Component gogglesLine(String labelKey, Component value) {
+        return Component.literal(PAD)
+                .append(Component.translatable(labelKey).withStyle(ChatFormatting.GRAY))
+                .append(": ")
+                .append(value);
+    }
+
     // ------------------------------------------------------------ persistence
 
     @Override
@@ -472,6 +552,15 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
         tag.putFloat("Steam", steam);
         tag.putFloat("OutputCapacity", outputCapacity);
         tag.putBoolean("Generating", generating);
+        tag.putBoolean("StructValid", structure.valid);
+        tag.putBoolean("StructRbmk", structure.rbmk);
+        tag.putInt("StructFuel", structure.fuel);
+        tag.putString("StructError", structure.error);
+        int[] errorArgs = new int[structure.errorArgs.length];
+        for (int i = 0; i < errorArgs.length; i++) {
+            errorArgs[i] = structure.errorArgs[i] instanceof Integer value ? value : 0;
+        }
+        tag.putIntArray("StructErrorArgs", errorArgs);
     }
 
     @Override
@@ -490,6 +579,11 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
         steam = tag.getFloat("Steam");
         outputCapacity = tag.getFloat("OutputCapacity");
         generating = tag.getBoolean("Generating");
+        viewValid = tag.getBoolean("StructValid");
+        viewRbmk = tag.getBoolean("StructRbmk");
+        viewFuel = tag.getInt("StructFuel");
+        viewError = tag.contains("StructError") ? tag.getString("StructError") : "err_interior";
+        viewErrorArgs = tag.getIntArray("StructErrorArgs");
         scanned = false;
     }
 }
