@@ -11,6 +11,8 @@ import com.createatomic.block.RadioactiveDebrisBlock;
 import com.createatomic.block.ReactorCasingBlock;
 import com.createatomic.block.ReactorComponentBlock;
 import com.createatomic.block.ReactorCoreBlock;
+import com.createatomic.block.ReactorHatchBlock;
+import com.createatomic.block.ReactorEquipmentBlock;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -57,6 +59,23 @@ public class ModBlocks {
     public static final DeferredBlock<Block> GRAPHITE_BLOCK = BLOCKS.register("graphite_block",
             () -> new ReactorComponentBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.COAL_BLOCK)
                     .strength(4.0f, 6.0f).requiresCorrectToolForDrops()));
+
+    // ---- reactor service hardware
+    public static final DeferredBlock<Block> REACTOR_HATCH = BLOCKS.register("reactor_hatch",
+            () -> new ReactorHatchBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(8.0f, 30.0f).requiresCorrectToolForDrops().noOcclusion()));
+
+    public static final DeferredBlock<Block> COOLANT_MANIFOLD = BLOCKS.register("coolant_manifold",
+            () -> new ReactorEquipmentBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(7.0f, 24.0f).requiresCorrectToolForDrops()));
+
+    public static final DeferredBlock<Block> STEAM_OUTLET = BLOCKS.register("steam_outlet",
+            () -> new ReactorEquipmentBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(7.0f, 24.0f).requiresCorrectToolForDrops()));
+
+    public static final DeferredBlock<Block> CONTROL_ROD_DRIVE = BLOCKS.register("control_rod_drive",
+            () -> new ReactorEquipmentBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .strength(7.0f, 24.0f).requiresCorrectToolForDrops()));
 
     // ---- radiation shielding
     public static final DeferredBlock<Block> REINFORCED_CONCRETE = BLOCKS.register("reinforced_concrete",

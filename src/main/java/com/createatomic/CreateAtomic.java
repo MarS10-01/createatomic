@@ -44,7 +44,7 @@ public class CreateAtomic {
         // where the controller's kinetic shaft could occupy the only usable face for a Create pipe.
         event.registerBlock(Capabilities.FluidHandler.BLOCK,
                 (level, pos, state, be, side) -> findFluidHandler(level, pos),
-                ModBlocks.REACTOR_CASING.get());
+                ModBlocks.REACTOR_CASING.get(), ModBlocks.COOLANT_MANIFOLD.get());
     }
 
     private static net.neoforged.neoforge.fluids.capability.IFluidHandler findFluidHandler(

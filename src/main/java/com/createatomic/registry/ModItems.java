@@ -63,6 +63,10 @@ public class ModItems {
     public static final DeferredItem<BlockItem> FUEL_CHANNEL_ITEM = blockItem("fuel_channel", ModBlocks.FUEL_CHANNEL);
     public static final DeferredItem<BlockItem> CONTROL_ROD_ITEM = blockItem("control_rod", ModBlocks.CONTROL_ROD);
     public static final DeferredItem<BlockItem> GRAPHITE_BLOCK_ITEM = blockItem("graphite_block", ModBlocks.GRAPHITE_BLOCK);
+    public static final DeferredItem<BlockItem> REACTOR_HATCH_ITEM = blockItem("reactor_hatch", ModBlocks.REACTOR_HATCH);
+    public static final DeferredItem<BlockItem> COOLANT_MANIFOLD_ITEM = blockItem("coolant_manifold", ModBlocks.COOLANT_MANIFOLD);
+    public static final DeferredItem<BlockItem> STEAM_OUTLET_ITEM = blockItem("steam_outlet", ModBlocks.STEAM_OUTLET);
+    public static final DeferredItem<BlockItem> CONTROL_ROD_DRIVE_ITEM = blockItem("control_rod_drive", ModBlocks.CONTROL_ROD_DRIVE);
     public static final DeferredItem<BlockItem> REINFORCED_CONCRETE_ITEM = blockItem("reinforced_concrete",
             ModBlocks.REINFORCED_CONCRETE);
     public static final DeferredItem<BlockItem> BORATED_CONCRETE_ITEM = blockItem("borated_concrete",

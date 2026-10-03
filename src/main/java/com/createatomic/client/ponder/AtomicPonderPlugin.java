@@ -23,7 +23,11 @@ public class AtomicPonderPlugin implements PonderPlugin {
                         CreateAtomic.id("reactor_casing"),
                         CreateAtomic.id("fuel_channel"),
                         CreateAtomic.id("control_rod"),
-                        CreateAtomic.id("graphite_block"))
+                        CreateAtomic.id("graphite_block"),
+                        CreateAtomic.id("reactor_hatch"),
+                        CreateAtomic.id("coolant_manifold"),
+                        CreateAtomic.id("steam_outlet"),
+                        CreateAtomic.id("control_rod_drive"))
                 .addStoryBoard("reactor/structure", AtomicScenes::structure, AtomicPonderTags.ATOMIC);
 
         helper.forComponents(
@@ -67,6 +71,10 @@ public class AtomicPonderPlugin implements PonderPlugin {
                 .add(CreateAtomic.id("fuel_channel"))
                 .add(CreateAtomic.id("control_rod"))
                 .add(CreateAtomic.id("graphite_block"))
+                .add(CreateAtomic.id("reactor_hatch"))
+                .add(CreateAtomic.id("coolant_manifold"))
+                .add(CreateAtomic.id("steam_outlet"))
+                .add(CreateAtomic.id("control_rod_drive"))
                 .add(CreateAtomic.id("radicia_fuel_rod"))
                 .add(CreateAtomic.id("geiger_counter"))
                 .add(CreateAtomic.id("reinforced_concrete"))
