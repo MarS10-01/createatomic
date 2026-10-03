@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.LeverBlock;
 
 /**
  * Ponder scenes. Schematics live in assets/createatomic/ponder/ (reactor/structure.nbt, radiation/shielding.nbt).
- * Layout of reactor/structure.nbt: base plate at y=0, casing box x,z = 1..5, y = 1..5 (3x3x3 inside),
+ * Layout of reactor/structure.nbt: base plate at y=0, casing box x,z = 1..5, y = 1..5 (legacy 3x3x3 demonstration; actual reactor now supports 5..11 blocks inside),
  * controller at 3,3,1 (axis z) with a shaft at 3,3,0, a lever at 2,3,0, fuel channels at the four
  * corners of the middle layer and one control rod in the centre.
  */
@@ -84,7 +84,7 @@ public class AtomicScenes {
         scene.world().showSection(util.select().fromTo(1, 5, 1, 5, 5, 5), Direction.DOWN);
         scene.idle(15);
         scene.overlay().showText(90)
-                .text("Close the chamber completely, from 3x3x3 up to 7x7x7 inside. A gap or a foreign block makes the structure invalid")
+                .text("Close the chamber completely; actual reactors require a 5x5x5 to 11x11x11 internal chamber. A gap or a foreign block makes the structure invalid")
                 .attachKeyFrame()
                 .colored(PonderPalette.RED)
                 .placeNearTarget()

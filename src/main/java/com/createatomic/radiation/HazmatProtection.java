@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack;
 /** How much of each radiation type the worn armor blocks (0..1). */
 public final class HazmatProtection {
     // full hazmat set: alpha, beta, gamma, neutron
-    private static final double[] FULL_SET = {1.0, 0.90, 0.45, 0.15};
+    private static final double[] FULL_SET = {1.0, 0.98, 0.75, 0.65};
 
     private HazmatProtection() {}
 

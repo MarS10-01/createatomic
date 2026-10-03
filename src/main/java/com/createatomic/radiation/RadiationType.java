@@ -10,8 +10,8 @@ package com.createatomic.radiation;
 public enum RadiationType {
     ALPHA("alpha", "\u03b1", 2.0, 20.0),
     BETA("beta", "\u03b2", 6.0, 1.0),
-    GAMMA("gamma", "\u03b3", 32.0, 1.0),
-    NEUTRON("neutron", "n", 24.0, 10.0);
+    GAMMA("gamma", "\u03b3", 160.0, 1.0),
+    NEUTRON("neutron", "n", 150.0, 10.0);
 
     public static final RadiationType[] VALUES = values();
 

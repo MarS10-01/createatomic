@@ -26,6 +26,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
@@ -280,8 +281,8 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
         Vec3 source = structure.valid ? structure.center : Vec3.atCenterOf(worldPosition);
         double multiplier = (structure.valid && structure.rbmk) ? 1.3 : 1.0;
         double hot = power * rods + decay * hotRods;
-        double gamma = (0.0004 * rods + 0.0003 * spent + 0.007 * hot) * multiplier;
-        double neutron = 0.004 * power * rods * multiplier;
+        double gamma = (0.004 * rods + 0.003 * spent + 0.06 * hot) * multiplier;
+        double neutron = 0.02 * power * Math.max(1, rods) * multiplier;
         if (gamma < 1.0e-6 && neutron < 1.0e-6) {
             return;
         }
@@ -336,26 +337,94 @@ public class ReactorCoreBlockEntity extends GeneratingKineticBlockEntity {
         int size = Math.max(1, Math.max(rods, hotRods) + spent / 2);
         Vec3 center = structure.valid ? structure.center : Vec3.atCenterOf(pos);
 
-        double k = Math.min(10.0, 1.0 + size * 0.25);
-        Radiation.emit(serverLevel, pos, center, new double[] {0.0, 0.01 * k, 0.08 * k, 0.03 * k}, 4800, true);
+        double k = Math.min(16.0, 1.0 + size * 0.35);
+        // Long-lived exclusion zone: gamma reaches 160 blocks, neutron 150 blocks.
+        Radiation.emit(serverLevel, pos, center, new double[] {0.02 * k, 0.15 * k, 45.0 * k, 2.5 * k},
+                240000, true);
+
+        // Consume all fuel/waste before the controller is destroyed. Fuel becomes molten corium.
+        int coriumCount = Math.max(4, size * 3 + hotRods * 2);
+        rods = 0;
+        spent = 0;
+        hotRods = 0;
+        burnLeft = 0f;
+        coolant = 0;
+        power = 0f;
+        decay = 0f;
 
         serverLevel.removeBlock(pos, false);
-        float blast = rbmk ? Math.min(14f, 6f + size * 0.5f) : Math.min(10f, 4f + size * 0.2f);
+        float blast = rbmk ? Math.min(24f, 13f + size * 0.7f) : Math.min(20f, 10f + size * 0.55f);
         serverLevel.explode(null, center.x, center.y, center.z, blast, Level.ExplosionInteraction.BLOCK);
 
         RandomSource random = serverLevel.random;
-        int radius = rbmk ? 8 : 5;
-        int count = 10 + size * 2;
         BlockPos origin = BlockPos.containing(center);
-        for (int i = 0; i < count; i++) {
-            BlockPos column = origin.offset(random.nextInt(radius * 2 + 1) - radius, 3,
-                    random.nextInt(radius * 2 + 1) - radius);
-            for (int dy = 0; dy < 12; dy++) {
-                BlockPos p = column.below(dy);
+
+        // Dense corium field immediately around the reactor.
+        int coriumPlaced = 0;
+        int coriumRadius = Math.min(12, 5 + size / 2);
+        for (int i = 0; i < coriumCount * 3 && coriumPlaced < coriumCount; i++) {
+            int dx = random.nextInt(coriumRadius * 2 + 1) - coriumRadius;
+            int dz = random.nextInt(coriumRadius * 2 + 1) - coriumRadius;
+            if (dx * dx + dz * dz > coriumRadius * coriumRadius) continue;
+            for (int dy = 8; dy >= -8; dy--) {
+                BlockPos p = origin.offset(dx, dy, dz);
                 if (serverLevel.getBlockState(p).isAir() && !serverLevel.getBlockState(p.below()).isAir()) {
-                    serverLevel.setBlockAndUpdate(p, ModBlocks.RADIOACTIVE_DEBRIS.get().defaultBlockState());
-                    if (rbmk && random.nextBoolean()) {
-                        serverLevel.setBlockAndUpdate(p.above(), Blocks.FIRE.defaultBlockState());
+                    serverLevel.setBlockAndUpdate(p, ModBlocks.CORIUM.get().defaultBlockState());
+                    coriumPlaced++;
+                    break;
+                }
+            }
+        }
+
+        // The whole 150-block area is visibly damaged without trying to rewrite every block.
+        int zoneRadius = 150;
+        int samples = Math.min(4500, 1200 + size * 80);
+        for (int i = 0; i < samples; i++) {
+            int dx = random.nextInt(zoneRadius * 2 + 1) - zoneRadius;
+            int dz = random.nextInt(zoneRadius * 2 + 1) - zoneRadius;
+            if (dx * dx + dz * dz > zoneRadius * zoneRadius) continue;
+            int surfaceY = serverLevel.getHeight(Heightmap.Types.WORLD_SURFACE, origin.getX() + dx, origin.getZ() + dz);
+            BlockPos column = new BlockPos(origin.getX() + dx, surfaceY, origin.getZ() + dz);
+            for (int dy = 0; dy < 8; dy++) {
+                BlockPos p = column.below(dy);
+                BlockState state = serverLevel.getBlockState(p);
+                if (state.isAir()) continue;
+                BlockPos above = p.above();
+                BlockState aboveState = serverLevel.getBlockState(above);
+                if (state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT) || state.is(Blocks.PODZOL)
+                        || state.is(Blocks.COARSE_DIRT)) {
+                    serverLevel.setBlockAndUpdate(p, Blocks.COARSE_DIRT.defaultBlockState());
+                }
+                if (state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT)) {
+                    serverLevel.setBlockAndUpdate(p, Blocks.COARSE_DIRT.defaultBlockState());
+                }
+                if (state.is(Blocks.SHORT_GRASS) || state.is(Blocks.FERN) || state.is(Blocks.TALL_GRASS)) {
+                    serverLevel.setBlockAndUpdate(p, Blocks.DEAD_BUSH.defaultBlockState());
+                }
+                if (state.getBlock().defaultBlockState().is(net.minecraft.tags.BlockTags.LEAVES)) {
+                    serverLevel.setBlockAndUpdate(p, ModBlocks.IRRADIATED_LEAVES.get().defaultBlockState());
+                }
+                if (random.nextInt(18) == 0 && !aboveState.isAir()) {
+                    break;
+                }
+                break;
+            }
+        }
+
+        // Persistent hot spots at the surface.
+        for (int i = 0; i < 180; i++) {
+            int dx = random.nextInt(zoneRadius * 2 + 1) - zoneRadius;
+            int dz = random.nextInt(zoneRadius * 2 + 1) - zoneRadius;
+            if (dx * dx + dz * dz > zoneRadius * zoneRadius) continue;
+            int surfaceY = serverLevel.getHeight(Heightmap.Types.WORLD_SURFACE, origin.getX() + dx, origin.getZ() + dz);
+            BlockPos column = new BlockPos(origin.getX() + dx, surfaceY, origin.getZ() + dz);
+            for (int dy = 0; dy < 8; dy++) {
+                BlockPos p = column.below(dy);
+                if (!serverLevel.getBlockState(p).isAir()) {
+                    if (serverLevel.getBlockState(p).is(Blocks.GRASS_BLOCK)
+                            || serverLevel.getBlockState(p).is(Blocks.DIRT)
+                            || serverLevel.getBlockState(p).is(Blocks.COARSE_DIRT)) {
+                        serverLevel.setBlockAndUpdate(p, ModBlocks.RADIOACTIVE_DEBRIS.get().defaultBlockState());
                     }
                     break;
                 }

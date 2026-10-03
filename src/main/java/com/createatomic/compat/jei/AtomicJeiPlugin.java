@@ -48,6 +48,7 @@ public class AtomicJeiPlugin implements IModPlugin {
         info(registration, ModItems.HAZMAT_CHESTPLATE, "hazmat");
         info(registration, ModItems.HAZMAT_LEGGINGS, "hazmat");
         info(registration, ModItems.HAZMAT_BOOTS, "hazmat");
+        info(registration, ModItems.CORIUM_ITEM, "corium");
     }
 
     private static void info(IRecipeRegistration registration, Supplier<? extends ItemLike> item, String key) {

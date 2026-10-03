@@ -17,7 +17,7 @@ import net.minecraft.world.phys.Vec3;
  * Result of scanning the reactor multiblock around a controller.
  *
  * Rules:
- *  - the controller sits IN the wall of a sealed rectangular chamber (3x3x3 up to 7x7x7 inside)
+ *  - the controller sits IN the wall of a sealed rectangular chamber (3x3x3 up to 11x11x11 inside)
  *  - the wall (every block touching the chamber) is Reactor Casing or a Reactor Controller
  *  - the chamber contains only air, Fuel Channels, Control Rods and Graphite Blocks
  *  - at least 1 fuel channel, and 1 control rod per 4 fuel channels
@@ -25,8 +25,8 @@ import net.minecraft.world.phys.Vec3;
  *    without graphite it is a water-moderated pressurized water reactor (PWR)
  */
 public final class ReactorStructure {
-    public static final int MIN_DIM = 3;
-    public static final int MAX_DIM = 7;
+    public static final int MIN_DIM = 5;
+    public static final int MAX_DIM = 11;
     private static final int MAX_CELLS = MAX_DIM * MAX_DIM * MAX_DIM;
 
     public boolean valid;

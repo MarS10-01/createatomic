@@ -28,7 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
  *  - redstone signal (0-15) = how far the control rods are withdrawn (no signal = rods fully inserted = off)
  *  - comparator output     = core temperature (0-15), use it to build your own safety systems
  *  - right-click, fuel rod  : load a rod (reactor must be idle)
- *  - right-click, water bucket or a Create pipe/pump : coolant
+ *  - right-click, water bucket or a Create pipe/pump on ANY exposed face : coolant
  *  - right-click, empty hand: status / structure check
  *  - sneak + right-click, empty hand: unload (reactor must be cold)
  */

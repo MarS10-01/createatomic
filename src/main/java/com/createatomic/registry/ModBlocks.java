@@ -65,4 +65,15 @@ public class ModBlocks {
             () -> new RadioactiveDebrisBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BLACKSTONE)
                     .strength(3.0f, 6.0f).lightLevel(s -> 7).noLootTable(),
                     0.0, 4.0e-3, 8.0e-3, 2.0e-3));
+
+    // Permanent molten fuel residue left by a major reactor accident.
+    public static final DeferredBlock<Block> CORIUM = BLOCKS.register("corium",
+            () -> new RadioactiveBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.MAGMA_BLOCK)
+                    .strength(4.0f, 20.0f).lightLevel(s -> 12).noLootTable(),
+                    0.0, 0.015, 0.12, 0.025));
+
+    // Orange-brown foliage used to make the 150-block exclusion zone visibly contaminated.
+    public static final DeferredBlock<Block> IRRADIATED_LEAVES = BLOCKS.register("irradiated_leaves",
+            () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.OAK_LEAVES)
+                    .strength(0.2f).noOcclusion().lightLevel(s -> 1)));
 }
