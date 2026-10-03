@@ -1,7 +1,6 @@
 {
   "variants": {
-    "": {
-      "model": "createatomic:block/fuel_channel"
-    }
+    "loaded=false": {"model": "createatomic:block/fuel_channel"},
+    "loaded=true": {"model": "createatomic:block/fuel_channel_loaded"}
   }
 }

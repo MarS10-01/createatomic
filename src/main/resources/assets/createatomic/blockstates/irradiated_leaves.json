@@ -1,1 +1,7 @@
-{"variants":{"":{"model":"createatomic:block/irradiated_leaves"}}}
+{
+  "variants": {
+    "": {
+      "model": "createatomic:block/irradiated_leaves"
+    }
+  }
+}

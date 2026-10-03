@@ -1,1 +1,6 @@
-{"parent":"minecraft:block/cube_all","textures":{"all":"createatomic:block/irradiated_leaves"}}
+{
+  "parent": "minecraft:block/leaves",
+  "textures": {
+    "all": "createatomic:block/irradiated_leaves"
+  }
+}

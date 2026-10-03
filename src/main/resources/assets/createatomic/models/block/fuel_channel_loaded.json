@@ -1,0 +1,33 @@
+{
+  "textures": {
+    "side": "createatomic:block/fuel_channel_side",
+    "end": "createatomic:block/fuel_channel_end",
+    "rod": "createatomic:item/radicia_fuel_rod"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 0],
+      "to": [16, 8, 16],
+      "faces": {
+        "down": {"texture": "#end"},
+        "up": {"texture": "#end"},
+        "north": {"texture": "#side"},
+        "south": {"texture": "#side"},
+        "west": {"texture": "#side"},
+        "east": {"texture": "#side"}
+      }
+    },
+    {
+      "from": [6, 8, 6],
+      "to": [10, 16, 10],
+      "faces": {
+        "down": {"texture": "#rod"},
+        "up": {"texture": "#rod"},
+        "north": {"texture": "#rod"},
+        "south": {"texture": "#rod"},
+        "west": {"texture": "#rod"},
+        "east": {"texture": "#rod"}
+      }
+    }
+  ]
+}
